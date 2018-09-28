@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/moov-io/auth/pkg/buntdbclient"
 
@@ -45,9 +46,21 @@ func setupOauthServer(logger log.Logger) (*oauth, error) {
 		return nil, fmt.Errorf("problem creating token store: %v", err)
 	}
 
+	// Create our session manager
 	out.manager = manage.NewDefaultManager()
 	out.manager.MapTokenStorage(tokenStore)
 
+	// Defaults from (in vendor/)
+	// gopkg.in/oauth2.v3/manage/config.go
+	cfg := &manage.Config{
+		AccessTokenExp:    2 * time.Hour,
+		RefreshTokenExp:   24 * 3 * time.Hour,
+		IsGenerateRefresh: true,
+	}
+	out.manager.SetAuthorizeCodeTokenCfg(cfg)
+	out.manager.SetClientTokenCfg(cfg)
+
+	// Setup oauth2 clients database
 	path = os.Getenv("OAUTH2_CLIENTS_DB_PATH")
 	if path == "" {
 		path = "oauth2_clients.db"
