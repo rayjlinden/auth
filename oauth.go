@@ -93,6 +93,8 @@ func addOAuthRoutes(r *mux.Router, o *oauth, logger log.Logger, auth authable) {
 // authorizeHandler checks the request for appropriate oauth information
 // and returns "200 OK" if the token is valid.
 func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
+	w = wrapResponseWriter(w, r, "oauth.authorizeHandler")
+
 	// We aren't using HandleAuthorizeRequest here because that assumes redirect_uri
 	// exists on the request. We're just checking for a valid token.
 	ti, err := o.server.ValidationBearerToken(r)
@@ -134,6 +136,7 @@ func (r *rememberingWriter) WriteHeader(code int) {
 // generate a token (or return an error).
 func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	w = &rememberingWriter{ResponseWriter: w}
+	w = wrapResponseWriter(w, r, "oauth.tokenHandler")
 
 	// This block is copied from o.server.HandleTokenRequest
 	// We needed to inspect what's going on a bit.
@@ -176,6 +179,8 @@ func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
 // This method extracts the user from the cookies in r.
 func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "oauth.createTokenHandler")
+
 		userId, err := auth.findUserId(extractCookie(r).Value)
 		if err != nil {
 			// user not found, return

@@ -17,6 +17,8 @@ func addLogoutRoutes(router *mux.Router, logger log.Logger, auth authable) {
 
 func logoutRoute(auth authable) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "logoutRoute")
+
 		cookie := extractCookie(r)
 		if cookie == nil {
 			w.WriteHeader(http.StatusOK)

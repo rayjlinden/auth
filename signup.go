@@ -39,6 +39,8 @@ func addSignupRoutes(router *mux.Router, logger log.Logger, auth authable, userS
 
 func signupRoute(auth authable, userService userRepository) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "signupRoute")
+
 		if r.Body == nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

@@ -6,9 +6,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"time"
@@ -142,9 +145,88 @@ func addCORSHandler(r *mux.Router) {
 	})
 }
 
+// getRequestId extracts X-Request-Id from the http request, which
+// is used in tracing requests.
+//
+// TODO(adam): IIRC a "max header size" param in net/http.Server - verify and configure
+func getRequestId(r *http.Request) string {
+	return r.Header.Get("X-Request-Id")
+}
+
 func addPingRoute(r *mux.Router) {
 	r.Methods("GET").Path("/ping").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "ping")
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("PONG"))
 	})
+}
+
+// responsewriter is an http.ResponseWriter that records the
+// outgoing response and executes a callback with the saved
+// metadata.
+type responseWriter struct {
+	rec *httptest.ResponseRecorder
+	w   http.ResponseWriter
+
+	start             time.Time
+	method, requestId string
+	headersWritten    bool
+}
+
+// Header returns headers added to the response
+func (w *responseWriter) Header() http.Header {
+	return w.w.Header()
+}
+
+// Write copies the sent bytes and records them, but then
+// sends the incoming array down to our empty http.ResponseWriter
+func (w *responseWriter) Write(b []byte) (int, error) {
+	bb := make([]byte, len(b))
+	if copy(bb, b) == 0 {
+		return 0, errors.New("empty body")
+	}
+	w.rec.Write(bb)
+	return w.w.Write(b)
+}
+
+// WriteHeader sets the status code for the requesst and flushes headers
+// back to the client.
+//
+// The provided callback is executed after flushing headers.
+func (w *responseWriter) WriteHeader(code int) {
+	if w.headersWritten {
+		return
+	}
+	w.headersWritten = true
+
+	w.rec.WriteHeader(code)
+	w.w.WriteHeader(code)
+
+	w.callback()
+}
+
+func (w *responseWriter) callback() {
+	diff := time.Now().Sub(w.start)
+	routeHistogram.With("route", w.method).Observe(diff.Seconds())
+
+	if w.rec.Header().Get("Content-Type") == "" {
+		// skip Go's content sniff here to speed up rendering
+		w.rec.Header().Set("Content-Type", "text/plain")
+	}
+
+	if w.method != "" && w.requestId != "" {
+		logger.Log(w.method, fmt.Sprintf("status=%d, took=%s, requestId=%s", w.rec.Code, diff, w.requestId))
+	}
+}
+
+// wrapResponseWriter creates a new responseWriter and initializes an
+// httptest.ResponseRecorder
+func wrapResponseWriter(w http.ResponseWriter, r *http.Request, method string) http.ResponseWriter {
+	return &responseWriter{
+		method:    method,
+		requestId: getRequestId(r),
+		rec:       httptest.NewRecorder(),
+		w:         w,
+		start:     time.Now(),
+	}
 }
