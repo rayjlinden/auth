@@ -13,6 +13,7 @@ before_install:
 - go get -u golang.org/x/lint/golint
 - go get github.com/fzipp/gocyclo
 - go get -u honnef.co/go/tools/cmd/megacheck
+- go get golang.org/x/tools/cmd/cover
 # deploys help
 - go get github.com/mitchellh/gox
 - go get github.com/tcnksm/ghr
@@ -20,12 +21,13 @@ before_script:
 - GOFILES=$(find . -type f -name '*.go' | grep -v vendor)
 script:
 - test -z $(gofmt -s -l $GOFILES)
-- go test ./...
+- go test ./... -race -coverprofile=coverage.txt -covermode=atomic
 - misspell -error -locale US $GOFILES
 - gocyclo -over 19 $GOFILES
 - golint -set_exit_status $GOFILES
 - megacheck ./...
 after_success:
+  - bash <(curl -s https://codecov.io/bash)
   - make docker
 deploy:
   provider: releases
