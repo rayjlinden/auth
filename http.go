@@ -14,6 +14,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -168,9 +169,14 @@ type responseWriter struct {
 	rec *httptest.ResponseRecorder
 	w   http.ResponseWriter
 
-	start             time.Time
-	method, requestId string
-	headersWritten    bool
+	start          time.Time
+	method         string
+	request        *http.Request
+	headersWritten bool
+}
+
+func (w *responseWriter) requestId() string {
+	return getRequestId(w.request)
 }
 
 // Header returns headers added to the response
@@ -214,8 +220,15 @@ func (w *responseWriter) callback() {
 		w.rec.Header().Set("Content-Type", "text/plain")
 	}
 
-	if w.method != "" && w.requestId != "" {
-		logger.Log(w.method, fmt.Sprintf("status=%d, took=%s, requestId=%s", w.rec.Code, diff, w.requestId))
+	if w.method != "" && w.requestId() != "" {
+		line := strings.Join([]string{
+			fmt.Sprintf("method=%s", w.request.Method),
+			fmt.Sprintf("path=%s", w.request.URL.Path),
+			fmt.Sprintf("status=%d", w.rec.Code),
+			fmt.Sprintf("took=%s", diff),
+			fmt.Sprintf("requestId=%s", w.requestId()),
+		}, ", ")
+		logger.Log(w.method, line)
 	}
 }
 
@@ -223,10 +236,10 @@ func (w *responseWriter) callback() {
 // httptest.ResponseRecorder
 func wrapResponseWriter(w http.ResponseWriter, r *http.Request, method string) http.ResponseWriter {
 	return &responseWriter{
-		method:    method,
-		requestId: getRequestId(r),
-		rec:       httptest.NewRecorder(),
-		w:         w,
-		start:     time.Now(),
+		method:  method,
+		request: r,
+		rec:     httptest.NewRecorder(),
+		w:       w,
+		start:   time.Now(),
 	}
 }
