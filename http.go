@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -98,6 +99,47 @@ func createCookie(userId string, auth authable) (*http.Cookie, error) {
 		return nil, err
 	}
 	return cookie, nil
+}
+
+// addCORSHandler captures Corss Origin Resource Sharing (CORS) requests
+// by looking at all OPTIONS requests for the Origin header, parsing that
+// and responding back with the other Access-Control-Allow-* headers.
+//
+// Docs: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+func addCORSHandler(r *mux.Router) {
+	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// render back CORS headers
+		// we only want to render valid URL's
+		// and only their scheme + host (no path, query, etc)
+		u, err := url.Parse(origin)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if u.Scheme != "https" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		// overwrite u with just the components we want rendered
+		u = &url.URL{
+			Scheme: u.Scheme,
+			Host:   u.Host,
+		}
+		w.Header().Set("Access-Control-Allow-Origin", u.String())
+
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Cookie, X-CSRFToken, Content-Type, Content-Length, Accept-Encoding")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	})
 }
 
 func addPingRoute(r *mux.Router) {

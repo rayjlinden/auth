@@ -125,6 +125,7 @@ func main() {
 
 	// api routes
 	router := mux.NewRouter()
+	addCORSHandler(router)
 	addPingRoute(router)
 	addOAuthRoutes(router, oauth, logger, authService)
 	addLoginRoutes(router, logger, authService, userService)
