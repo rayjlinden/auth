@@ -112,10 +112,14 @@ func createCookie(userId string, auth authable) (*http.Cookie, error) {
 // Docs: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 func addCORSHandler(r *mux.Router) {
 	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "http")
 		w.Header().Set("Content-Type", "text/plain")
 
 		origin := r.Header.Get("Origin")
 		if origin == "" {
+			if id := getRequestId(r); id != "" && logger != nil {
+				logger.Log("http", fmt.Sprintf("requestId=%s, preflight - no origin", id))
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -125,10 +129,16 @@ func addCORSHandler(r *mux.Router) {
 		// and only their scheme + host (no path, query, etc)
 		u, err := url.Parse(origin)
 		if err != nil {
+			if id := getRequestId(r); id != "" && logger != nil {
+				logger.Log("http", fmt.Sprintf("requestId=%s, preflight - bad url: %v", id, err))
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if u.Scheme != "https" {
+			if id := getRequestId(r); id != "" && logger != nil {
+				logger.Log("http", fmt.Sprintf("requestId=%s, preflight - bad scheme: %s", id, u.Scheme))
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -195,7 +205,7 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 	return w.w.Write(b)
 }
 
-// WriteHeader sets the status code for the requesst and flushes headers
+// WriteHeader sets the status code for the request and flushes headers
 // back to the client.
 //
 // The provided callback is executed after flushing headers.
