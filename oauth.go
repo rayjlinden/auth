@@ -80,7 +80,7 @@ func setupOauthServer(logger log.Logger) (*oauth, error) {
 // addOAuthRoutes includes our oauth2 routes on the provided mux.Router
 func addOAuthRoutes(r *mux.Router, o *oauth, logger log.Logger, auth authable) {
 	r.Methods("GET").Path("/oauth2/authorize").HandlerFunc(o.authorizeHandler)
-	r.Methods("POST").Path("/oauth2/token/create").HandlerFunc(o.createTokenHandler(auth))
+	r.Methods("POST").Path("/oauth2/client").HandlerFunc(o.createClientHandler(auth))
 
 	// Check token routes
 	if o.server.Config.AllowGetAccessRequest {
@@ -171,10 +171,10 @@ func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(bs)
 }
 
-// createTokenHandler will create an oauth token for the authenticated user.
+// createClientHandler will create an oauth client for the authenticated user.
 //
 // This method extracts the user from the cookies in r.
-func (o *oauth) createTokenHandler(auth authable) http.HandlerFunc {
+func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId, err := auth.findUserId(extractCookie(r).Value)
 		if err != nil {
@@ -217,16 +217,28 @@ func (o *oauth) createTokenHandler(auth authable) http.HandlerFunc {
 		// metrics
 		clientGenerations.Add(1)
 
-		// render back new client info
-		type response struct {
-			Clients []*models.Client `json:"clients"`
-		}
+		// render back new clients
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		if err := json.NewEncoder(w).Encode(&response{clients}); err != nil {
+
+		var responseClients []*client
+		for i := range clients {
+			responseClients = append(responseClients, &client{
+				ClientID:     clients[i].ID,
+				ClientSecret: clients[i].Secret,
+				Domain:       clients[i].Domain,
+			})
+		}
+		if err := json.NewEncoder(w).Encode(responseClients); err != nil {
 			internalError(w, err, "oauth")
 			return
 		}
 	}
+}
+
+type client struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Domain       string `json:"domain"`
 }
 
 func (o *oauth) shutdown() error {
