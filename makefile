@@ -11,7 +11,6 @@ docker:
 	docker tag moov/auth:$(VERSION) moov/auth:latest
 
 release: docker AUTHORS
-	go vet ./...
 	go test ./...
 	git tag -f $(VERSION)
 
