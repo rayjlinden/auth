@@ -91,8 +91,13 @@ func main() {
 	defer adminServer.Shutdown()
 
 	// migrate database
-	db, err := migrate(logger)
+	path := getSqlitePath()
+	db, err := createConnection(path)
 	if err != nil {
+		logger.Log("admin", err)
+		os.Exit(1)
+	}
+	if err := migrate(db, logger); err != nil {
 		logger.Log("admin", err)
 		os.Exit(1)
 	}

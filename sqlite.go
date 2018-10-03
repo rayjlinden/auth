@@ -88,19 +88,13 @@ func createConnection(path string) (*sql.DB, error) {
 //
 // https://github.com/mattn/go-sqlite3/blob/master/_example/simple/simple.go
 // https://astaxie.gitbooks.io/build-web-application-with-golang/en/05.3.html
-func migrate(logger log.Logger) (*sql.DB, error) {
-	path := getSqlitePath()
-	db, err := createConnection(path)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Log("sqlite", fmt.Sprintf("migrating %s", path))
+func migrate(db *sql.DB, logger log.Logger) error {
+	logger.Log("sqlite", "starting sqlite migrations...") // TODO(adam): more detail?
 	for i := range migrations {
 		row := migrations[i]
 		res, err := db.Exec(row)
 		if err != nil {
-			return nil, fmt.Errorf("migration #%d [%s...] had problem: %v", i, row[:40], err)
+			return fmt.Errorf("migration #%d [%s...] had problem: %v", i, row[:40], err)
 		}
 		n, err := res.RowsAffected()
 		if err == nil {
@@ -108,6 +102,5 @@ func migrate(logger log.Logger) (*sql.DB, error) {
 		}
 	}
 	logger.Log("sqlite", "finished migrations")
-
-	return db, nil
+	return nil
 }

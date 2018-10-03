@@ -37,6 +37,8 @@ type User struct {
 var (
 	dropPlusExtender = regexp.MustCompile(`(\+.*)$`)
 	dropPeriods      = strings.NewReplacer(".", "")
+
+	errNoCookieData = errors.New("no cookie data provided")
 )
 
 const (
@@ -197,7 +199,7 @@ type auth struct {
 func (a *auth) findUserId(data string) (string, error) {
 	data = strings.TrimSpace(data)
 	if data == "" {
-		return "", errors.New("no cookie data provided")
+		return "", errNoCookieData
 	}
 
 	// the SHA256 checksum is stored, not the actual data.
