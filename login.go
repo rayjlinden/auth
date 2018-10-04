@@ -24,6 +24,7 @@ func addLoginRoutes(router *mux.Router, logger log.Logger, auth authable, userSe
 
 func checkLogin(logger log.Logger, auth authable, userService userRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "checkLogin")
 		w.Header().Set("Content-Type", "text/plain")
 
 		cookie := extractCookie(r)
@@ -47,6 +48,8 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 
 func loginRoute(logger log.Logger, auth authable, userService userRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "loginRoute")
+
 		if r.Body == nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return

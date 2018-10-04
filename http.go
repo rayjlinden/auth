@@ -6,11 +6,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
+	"net/http/httptest"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -110,43 +113,127 @@ func createCookie(userId string, auth authable) (*http.Cookie, error) {
 // Docs: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 func addCORSHandler(r *mux.Router) {
 	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-
 		origin := r.Header.Get("Origin")
 		if origin == "" {
+			if logger != nil {
+				line := fmt.Sprintf("method=%s, path=%s, preflight - no origin", r.Method, r.URL.Path)
+				logger.Log("http", line)
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
-		// render back CORS headers
-		// we only want to render valid URL's
-		// and only their scheme + host (no path, query, etc)
-		u, err := url.Parse(origin)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if u.Scheme != "https" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		// overwrite u with just the components we want rendered
-		u = &url.URL{
-			Scheme: u.Scheme,
-			Host:   u.Host,
-		}
-		w.Header().Set("Access-Control-Allow-Origin", u.String())
-
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Cookie, X-CSRFToken, Content-Type, Content-Length, Accept-Encoding")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		setAccessControlAllow(w, r)
 		w.WriteHeader(http.StatusOK)
 	})
 }
 
+func setAccessControlAllow(w http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	// Access-Control-Allow-Origin can't be '*' with requests that send credentials.
+	// Instead, we need to explicitly set the domain (from request's Origin header)
+	//
+	// Allow requests from anyone's localhost and only from secure pages.
+	if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://") {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "PATCH, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Content-Type", "text/plain")
+	}
+}
+
+// getRequestId extracts X-Request-Id from the http request, which
+// is used in tracing requests.
+//
+// TODO(adam): IIRC a "max header size" param in net/http.Server - verify and configure
+func getRequestId(r *http.Request) string {
+	return r.Header.Get("X-Request-Id")
+}
+
 func addPingRoute(r *mux.Router) {
 	r.Methods("GET").Path("/ping").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "ping")
 		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("PONG"))
 	})
+}
+
+// responsewriter is an http.ResponseWriter that records the
+// outgoing response and executes a callback with the saved
+// metadata.
+type responseWriter struct {
+	rec *httptest.ResponseRecorder
+	w   http.ResponseWriter
+
+	start          time.Time
+	method         string
+	request        *http.Request
+	headersWritten bool
+}
+
+func (w *responseWriter) requestId() string {
+	return getRequestId(w.request)
+}
+
+// Header returns headers added to the response
+func (w *responseWriter) Header() http.Header {
+	return w.w.Header()
+}
+
+// Write copies the sent bytes and records them, but then
+// sends the incoming array down to our empty http.ResponseWriter
+func (w *responseWriter) Write(b []byte) (int, error) {
+	bb := make([]byte, len(b))
+	if copy(bb, b) == 0 {
+		return 0, errors.New("empty body")
+	}
+	w.rec.Write(bb)
+	return w.w.Write(b)
+}
+
+// WriteHeader sets the status code for the request and flushes headers
+// back to the client.
+//
+// The provided callback is executed after flushing headers.
+func (w *responseWriter) WriteHeader(code int) {
+	if w.headersWritten {
+		return
+	}
+	w.headersWritten = true
+
+	setAccessControlAllow(w, w.request)
+
+	w.rec.WriteHeader(code)
+	w.w.WriteHeader(code)
+
+	w.callback()
+}
+
+func (w *responseWriter) callback() {
+	diff := time.Now().Sub(w.start)
+	routeHistogram.With("route", w.method).Observe(diff.Seconds())
+
+	if w.method != "" && w.requestId() != "" {
+		line := strings.Join([]string{
+			fmt.Sprintf("method=%s", w.request.Method),
+			fmt.Sprintf("path=%s", w.request.URL.Path),
+			fmt.Sprintf("status=%d", w.rec.Code),
+			fmt.Sprintf("took=%s", diff),
+			fmt.Sprintf("requestId=%s", w.requestId()),
+		}, ", ")
+		logger.Log(w.method, line)
+	}
+}
+
+// wrapResponseWriter creates a new responseWriter and initializes an
+// httptest.ResponseRecorder
+func wrapResponseWriter(w http.ResponseWriter, r *http.Request, method string) http.ResponseWriter {
+	return &responseWriter{
+		method:  method,
+		request: r,
+		rec:     httptest.NewRecorder(),
+		w:       w,
+		start:   time.Now(),
+	}
 }
