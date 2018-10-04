@@ -41,20 +41,20 @@ func TestHTTP__addCORS(t *testing.T) {
 	}
 }
 
-// func TestHTTP__emptyOrigin(t *testing.T) {
-// 	router := mux.NewRouter()
-// 	w := httptest.NewRecorder()
-// 	r := httptest.NewRequest("OPTIONS", "https://api.moov.io/v1/auth/ping", nil)
-// 	r.Header.Set("Origin", "")
+func TestHTTP__emptyOrigin(t *testing.T) {
+	router := mux.NewRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("OPTIONS", "https://api.moov.io/v1/auth/ping", nil)
+	r.Header.Set("Origin", "")
 
-// 	addCORSHandler(router)
-// 	router.ServeHTTP(w, r)
-// 	w.Flush()
+	addCORSHandler(router)
+	router.ServeHTTP(w, r)
+	w.Flush()
 
-// 	if w.Code != http.StatusBadRequest {
-// 		t.Errorf("got %d", w.Code)
-// 	}
-// }
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("got %d", w.Code)
+	}
+}
 
 func TestHTTP__extractCookie(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com", nil)

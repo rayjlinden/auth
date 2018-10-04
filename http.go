@@ -111,29 +111,33 @@ func createCookie(userId string, auth authable) (*http.Cookie, error) {
 // Docs: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 func addCORSHandler(r *mux.Router) {
 	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w = wrapResponseWriter(w, r, "http")
-		w.Header().Set("Content-Type", "text/plain")
-
-		// Access-Control-Allow-Origin can't be '*' with requests that send credentials.
-		// Instead, we need to explicitly set the domain (from request's Origin header)
-
 		origin := r.Header.Get("Origin")
 		if origin == "" {
-			logger.Log("http", fmt.Sprintf("method=%s, path=%s, preflight - no origin", r.Method, r.URL.Path))
+			if logger != nil {
+				line := fmt.Sprintf("method=%s, path=%s, preflight - no origin", r.Method, r.URL.Path)
+				logger.Log("http", line)
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		setAccessControlAllow(w, r)
+		w.WriteHeader(http.StatusOK)
+	})
+}
 
-		// Allow requests from anyone's localhost and only from secure pages.
-		if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://") {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		}
-
+func setAccessControlAllow(w http.ResponseWriter, r *http.Request) {
+	origin := r.Header.Get("Origin")
+	// Access-Control-Allow-Origin can't be '*' with requests that send credentials.
+	// Instead, we need to explicitly set the domain (from request's Origin header)
+	//
+	// Allow requests from anyone's localhost and only from secure pages.
+	if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://") {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "PATCH, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.WriteHeader(http.StatusOK)
-	})
+		w.Header().Set("Content-Type", "text/plain")
+	}
 }
 
 // getRequestId extracts X-Request-Id from the http request, which
@@ -148,6 +152,7 @@ func addPingRoute(r *mux.Router) {
 	r.Methods("GET").Path("/ping").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w = wrapResponseWriter(w, r, "ping")
 		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("PONG"))
 	})
 }
@@ -195,6 +200,8 @@ func (w *responseWriter) WriteHeader(code int) {
 	}
 	w.headersWritten = true
 
+	setAccessControlAllow(w, w.request)
+
 	w.rec.WriteHeader(code)
 	w.w.WriteHeader(code)
 
@@ -204,11 +211,6 @@ func (w *responseWriter) WriteHeader(code int) {
 func (w *responseWriter) callback() {
 	diff := time.Now().Sub(w.start)
 	routeHistogram.With("route", w.method).Observe(diff.Seconds())
-
-	if w.rec.Header().Get("Content-Type") == "" {
-		// skip Go's content sniff here to speed up rendering
-		w.rec.Header().Set("Content-Type", "text/plain")
-	}
 
 	if w.method != "" && w.requestId() != "" {
 		line := strings.Join([]string{
