@@ -114,6 +114,9 @@ func addCORSHandler(r *mux.Router) {
 		w = wrapResponseWriter(w, r, "http")
 		w.Header().Set("Content-Type", "text/plain")
 
+		// Access-Control-Allow-Origin can't be '*' with requests that send credentials.
+		// Instead, we need to explicitly set the domain (from request's Origin header)
+
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			logger.Log("http", fmt.Sprintf("method=%s, path=%s, preflight - no origin", r.Method, r.URL.Path))
@@ -126,8 +129,8 @@ func addCORSHandler(r *mux.Router) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 		}
 
-		w.Header().Set("Access-Control-Allow-Methods", "HEAD, GET, POST, PATCH, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-CSRFToken,Content-Type,Content-Length,Accept-Encoding,X-User-Id")
+		w.Header().Set("Access-Control-Allow-Methods", "PATCH, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	})

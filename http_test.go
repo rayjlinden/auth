@@ -25,7 +25,7 @@ func TestHTTP__addCORS(t *testing.T) {
 	if w.Code != 200 {
 		t.Errorf("got %d", w.Code)
 	}
-	if v := w.Header().Get("Access-Control-Allow-Origin"); v != "*" {
+	if v := w.Header().Get("Access-Control-Allow-Origin"); v != "https://moov.io" {
 		t.Errorf("got %q", v)
 	}
 	headers := []string{
