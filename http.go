@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -117,40 +116,18 @@ func addCORSHandler(r *mux.Router) {
 
 		origin := r.Header.Get("Origin")
 		if origin == "" {
-			if id := getRequestId(r); id != "" && logger != nil {
-				logger.Log("http", fmt.Sprintf("requestId=%s, preflight - no origin", id))
-			}
+			logger.Log("http", fmt.Sprintf("method=%s, path=%s, preflight - no origin", r.Method, r.URL.Path))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		// render back CORS headers
-		// we only want to render valid URL's
-		// and only their scheme + host (no path, query, etc)
-		u, err := url.Parse(origin)
-		if err != nil {
-			if id := getRequestId(r); id != "" && logger != nil {
-				logger.Log("http", fmt.Sprintf("requestId=%s, preflight - bad url: %v", id, err))
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
+		// Allow requests from anyone's localhost and only from secure pages.
+		if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://") {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
 		}
-		if u.Scheme != "https" {
-			if id := getRequestId(r); id != "" && logger != nil {
-				logger.Log("http", fmt.Sprintf("requestId=%s, preflight - bad scheme: %s", id, u.Scheme))
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		// overwrite u with just the components we want rendered
-		u = &url.URL{
-			Scheme: u.Scheme,
-			Host:   u.Host,
-		}
-		w.Header().Set("Access-Control-Allow-Origin", u.String())
 
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Cookie, X-CSRFToken, Content-Type, Content-Length, Accept-Encoding")
+		w.Header().Set("Access-Control-Allow-Methods", "HEAD, GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-CSRFToken,Content-Type,Content-Length,Accept-Encoding,X-User-Id")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	})
