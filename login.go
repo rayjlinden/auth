@@ -116,6 +116,9 @@ func loginRoute(logger log.Logger, auth authable, userService userRepository) ht
 
 		http.SetCookie(w, cookie)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("X-User-Id", u.ID)
+		w.WriteHeader(http.StatusOK)
+
 		if err := json.NewEncoder(w).Encode(u); err != nil {
 			internalError(w, err, "login")
 			return
