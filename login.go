@@ -41,8 +41,21 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
+
+		user, err := userService.lookupByUserId(userId)
+		if err != nil {
+			internalError(w, err, "login")
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("X-User-Id", userId)
 		w.WriteHeader(http.StatusOK)
+
+		if err := json.NewEncoder(w).Encode(user); err != nil {
+			internalError(w, err, "login")
+			return
+		}
 	}
 }
 
