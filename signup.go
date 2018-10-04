@@ -131,7 +131,7 @@ func validatePassword(pass string) error {
 		return errors.New("no password provided")
 	}
 	if n := utf8.RuneCountInString(pass); n < minPasswordLength {
-		return fmt.Errorf("password required to be at least %d characters", n)
+		return fmt.Errorf("password required to be at least %d characters", minPasswordLength)
 	}
 	return nil
 }
