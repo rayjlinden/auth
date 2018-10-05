@@ -4,9 +4,9 @@
 package main
 
 import (
-	"testing"
-	"net/http/httptest"
 	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 func TestLogin__forwardedPreflight(t *testing.T) {
