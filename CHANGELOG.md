@@ -1,3 +1,14 @@
+## v0.3.1 (Released 2018-10-05)
+
+BUG FIXES
+
+- Don't trample over Content-Type values when writing CORS headers
+- Allow all our HTTP Methods with CORS requests
+
+IMPROVEMENTS
+
+- Respond with CORS headers for forward auth calls triggered from preflight requests.
+
 ## v0.3.0 (Released 2018-10-05)
 
 ADDITIONS
