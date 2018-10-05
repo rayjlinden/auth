@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -25,8 +26,24 @@ func addLoginRoutes(router *mux.Router, logger log.Logger, auth authable, userSe
 func checkLogin(logger log.Logger, auth authable, userService userRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w = wrapResponseWriter(w, r, "checkLogin")
-		w.Header().Set("Content-Type", "text/plain")
 
+		// Our LB setup uses "forward auth" which means traefik issues an internal
+		// HTTP request to this method that checks each request for a valid cookie.
+		// We use this instead of requiring each endpoint to be aware of auth.
+		//
+		// However, when a pre-flight request comes through that also triggers an
+		// internal forward auth call into this method, but without the cookie.
+		//
+		// Thus, we need to check if the request was forwarded as a pre-flight request
+		// and if so just respond with 200 and our usual CORS headers.
+		origMethod := r.Header.Get("X-Forwarded-Method")
+		if strings.EqualFold(origMethod, "OPTIONS") {
+			setAccessControlAllow(w, r)
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Start checking the incoming request for cookie auth
 		cookie := extractCookie(r)
 		if cookie == nil {
 			w.WriteHeader(http.StatusForbidden)

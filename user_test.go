@@ -50,6 +50,39 @@ func createTestAuthable() (*testAuth, error) {
 	return &testAuth{auth{db, logger}, dir}, nil
 }
 
+type testUserRepository struct {
+	sqliteUserRepository
+
+	dir string
+}
+
+func (repo *testUserRepository) cleanup() error {
+	if err := repo.sqliteUserRepository.close(); err != nil {
+		return err
+	}
+	return os.RemoveAll(repo.dir)
+}
+
+// createTestUserRepository
+func createTestUserRepository() (*testUserRepository, error) {
+	dir, err := ioutil.TempDir("", "userRepository")
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := createConnection(filepath.Join(dir, "auth.db"))
+	if err != nil {
+		return nil, err
+	}
+
+	logger := log.NewLogfmtLogger(ioutil.Discard)
+	if err := migrate(db, logger); err != nil {
+		return nil, err
+	}
+
+	return &testUserRepository{sqliteUserRepository{db, logger}, dir}, nil
+}
+
 func TestUser__cleanEmail(t *testing.T) {
 	cases := []struct {
 		input, expected string
