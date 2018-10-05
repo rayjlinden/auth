@@ -6,8 +6,28 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
+
+func TestOAuth2_rememberingWriter(t *testing.T) {
+	ww := httptest.NewRecorder()
+	w := &rememberingWriter{
+		ResponseWriter: ww,
+	}
+
+	// call .WriteHeader
+	w.WriteHeader(http.StatusTeapot)
+	ww.Flush()
+
+	if w.statusCode != http.StatusTeapot {
+		t.Errorf("got %d", w.statusCode)
+	}
+	if ww.Code != http.StatusTeapot {
+		t.Errorf("got %d", ww.Code)
+	}
+}
 
 func TestOAuth2_clientsJSON(t *testing.T) {
 	raw := []byte(`[{"client_id": "foo", "client_secret": "secrets", "domain": "moov.io"}]`)
