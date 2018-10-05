@@ -39,7 +39,7 @@ func TestHTTP__addCORS(t *testing.T) {
 	for i := range headers {
 		v := w.Header().Get(headers[i])
 		if v == "" {
-			t.Errorf("%s: %q", headers[i], v)
+			t.Errorf("%s's value is an empty string", headers[i])
 		}
 	}
 }
