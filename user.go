@@ -99,6 +99,10 @@ type sqliteUserRepository struct {
 	log log.Logger
 }
 
+func (repo sqliteUserRepository) close() error {
+	return repo.db.Close()
+}
+
 func (s *sqliteUserRepository) lookupByUserId(userId string) (*User, error) {
 	query := `select u.email, u.created_at, ud.first_name, ud.last_name, ud.phone, ud.company_url
 from users as u
