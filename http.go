@@ -135,8 +135,8 @@ func setAccessControlAllow(w http.ResponseWriter, r *http.Request) {
 	// Allow requests from anyone's localhost and only from secure pages.
 	if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://") {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "PATCH, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id")
+		w.Header().Set("Access-Control-Allow-Methods", "PATCH,DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id,X-Request-Id,Content-Type")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Content-Type", "text/plain")
 	}
