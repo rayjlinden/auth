@@ -138,7 +138,11 @@ func setAccessControlAllow(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Methods", "PATCH,DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id,X-Request-Id,Content-Type")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Content-Type", "text/plain")
+
+		// Don't overwrite content-type
+		if v := w.Header().Get("Content-Type"); v == "" {
+			w.Header().Set("Content-Type", "text/plain")
+		}
 	}
 }
 
