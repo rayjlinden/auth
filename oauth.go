@@ -201,6 +201,8 @@ func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 			return
 		}
 
+		// TODO(adam): don't create tokens if user hasn't gone through email verification
+
 		records, err := o.clientStore.GetByUserID(userId)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
 			internalError(w, err, "oauth")
