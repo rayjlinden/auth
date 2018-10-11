@@ -153,7 +153,7 @@ func main() {
 	addLoginRoutes(router, logger, authService, userService)
 	addLogoutRoutes(router, logger, authService)
 	addSignupRoutes(router, logger, authService, userService)
-	// TODO(adam): profile CRU[D] routes
+	addUserProfileRoutes(router, logger, authService, userService)
 
 	serve := &http.Server{
 		Addr:    *httpAddr,

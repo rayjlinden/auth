@@ -224,7 +224,9 @@ func (w *responseWriter) callback() {
 			fmt.Sprintf("took=%s", diff),
 			fmt.Sprintf("requestId=%s", w.requestId()),
 		}, ", ")
-		logger.Log(w.method, line)
+		if logger != nil {
+			logger.Log(w.method, line)
+		}
 	}
 }
 
