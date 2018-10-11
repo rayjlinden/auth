@@ -150,9 +150,10 @@ func main() {
 			PreferServerCipherSuites: true,
 			MinVersion:               tls.VersionTLS12,
 		},
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   30 * time.Second,
+		IdleTimeout:    60 * time.Second,
+		MaxHeaderBytes: http.DefaultMaxHeaderBytes,
 	}
 	shutdownServer := func() {
 		if err := serve.Shutdown(context.TODO()); err != nil {

@@ -148,8 +148,6 @@ func setAccessControlAllow(w http.ResponseWriter, r *http.Request) {
 
 // getRequestId extracts X-Request-Id from the http request, which
 // is used in tracing requests.
-//
-// TODO(adam): IIRC a "max header size" param in net/http.Server - verify and configure
 func getRequestId(r *http.Request) string {
 	return r.Header.Get("X-Request-Id")
 }
