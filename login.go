@@ -44,21 +44,11 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 		}
 
 		// Start checking the incoming request for cookie auth
-		cookie := extractCookie(r)
-		if cookie == nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		userId, err := auth.findUserId(cookie.Value)
+		userId, err := extractUserId(auth, r)
 		if err != nil {
-			internalError(w, err, "login")
-			return
-		}
-		if userId == "" {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-
 		user, err := userService.lookupByUserId(userId)
 		if err != nil {
 			internalError(w, err, "login")
