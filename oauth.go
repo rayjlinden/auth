@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"time"
@@ -128,27 +129,9 @@ func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// rememberingWriter is a http.ResponseWriter that knows when its headers
-// have been written. This is non-idempotent according to http.ResponseWriter,
-// but there's no good way to inspect if that's happened yet.
-type rememberingWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-// WriteHeader intecepts the embedded WriteHeader call to record what
-// status code was written.
-func (r *rememberingWriter) WriteHeader(code int) {
-	if r.statusCode == 0 {
-		r.statusCode = code
-	}
-	r.ResponseWriter.WriteHeader(code)
-}
-
 // tokenHandler passes off the request down to our oauth2 library to
 // generate a token (or return an error).
 func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
-	w = &rememberingWriter{ResponseWriter: w}
 	w = wrapResponseWriter(w, r, "oauth.tokenHandler")
 
 	// This block is copied from o.server.HandleTokenRequest
@@ -173,10 +156,8 @@ func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	// HandleTokenRequest currently returns nil even if the token request
 	// failed. That menas we can't clearly know if token generation passed or failed.
-	//
-	// So we need to find out if an error is written, which we can
-	// infer by w.WriteHeader call (a 4xx or 5xx status code).
-	if ww, ok := w.(*rememberingWriter); ok && ww.statusCode > 400 { // wrote error
+	// We check ww.Code then, it'll be 0 if no WriteHeader calls were made.
+	if ww, ok := w.(*httptest.ResponseRecorder); ok && ww.Code > 400 {
 		tokenGenerations.Add(1)
 		w.Header().Set("X-User-Id", ti.GetUserID()) // only on non-errors
 	}
