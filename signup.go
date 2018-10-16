@@ -75,8 +75,8 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 
 		// find user
 		u, err := userService.lookupByEmail(signup.Email)
-		if err != nil && !strings.Contains(err.Error(), "user not found") {
-			encodeError(w, errors.New("if this user exists, please try again with proper credentials"))
+		if err != nil {
+			internalError(w, fmt.Errorf("problem looking up user email %q: %v", signup.Email, err), "signup")
 			return
 		}
 		if u == nil {
