@@ -119,7 +119,11 @@ limit 1`
 	u := &User{}
 	u.ID = userId
 	var createdAt string // needs parsing
-	row.Scan(&u.Email, &createdAt, &u.FirstName, &u.LastName, &u.Phone, &u.CompanyURL)
+	err = row.Scan(&u.Email, &createdAt, &u.FirstName, &u.LastName, &u.Phone, &u.CompanyURL)
+	if err != nil {
+		return nil, err
+	}
+
 	t, err := time.Parse(serializedTimestampFormat, createdAt)
 	if err != nil {
 		s.log.Log("user", fmt.Sprintf("bad users.created_at format %q: %v", createdAt, err))
@@ -137,7 +141,10 @@ func (s *sqliteUserRepository) lookupByEmail(email string) (*User, error) {
 	row := stmt.QueryRow(cleanEmail(email))
 
 	var userId string
-	row.Scan(&userId)
+	err = row.Scan(&userId)
+	if err != nil {
+		return nil, err
+	}
 
 	if userId == "" {
 		return nil, errors.New("user not found")
@@ -227,7 +234,9 @@ func (a *auth) findUserId(data string) (string, error) {
 
 	var userId string
 	for rows.Next() {
-		rows.Scan(&userId)
+		if err := rows.Scan(&userId); err != nil {
+			return "", err
+		}
 		if userId != "" {
 			return userId, nil
 		}
