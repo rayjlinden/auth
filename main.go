@@ -20,6 +20,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/prometheus"
 	"github.com/gorilla/mux"
+	"github.com/mattn/go-sqlite3"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -95,8 +96,10 @@ func main() {
 	defer adminServer.Shutdown()
 
 	// migrate database
-	path := getSqlitePath()
-	db, err := createConnection(path)
+	if sqliteVersion, _, _ := sqlite3.Version(); sqliteVersion != "" {
+		logger.Log("main", fmt.Sprintf("sqlite version %s", sqliteVersion))
+	}
+	db, err := createConnection(getSqlitePath())
 	if err != nil {
 		logger.Log("admin", err)
 		os.Exit(1)
