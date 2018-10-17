@@ -6,10 +6,10 @@ package main
 
 import (
 	"encoding/json"
+	stderr "errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"time"
 
@@ -17,11 +17,16 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
+	"gopkg.in/oauth2.v3"
 	"gopkg.in/oauth2.v3/errors"
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
 	"gopkg.in/oauth2.v3/server"
 	"gopkg.in/oauth2.v3/store"
+)
+
+var (
+	errNoClientId = stderr.New("missing client_id")
 )
 
 type oauth struct {
@@ -32,19 +37,31 @@ type oauth struct {
 	logger log.Logger
 }
 
-func setupOauthServer(logger log.Logger) (*oauth, error) {
-	out := &oauth{
-		logger: logger,
-	}
-
-	// oauth2 setup
-	path := os.Getenv("OAUTH2_TOKENS_DB_PATH")
+func setupOAuthTokenStore(path string) (oauth2.TokenStore, error) {
 	if path == "" {
 		path = "oauth2_tokens.db"
 	}
 	tokenStore, err := store.NewFileTokenStore(path)
 	if err != nil {
 		return nil, fmt.Errorf("problem creating token store: %v", err)
+	}
+	return tokenStore, nil
+}
+
+func setupOAuthClientStore(path string) (*buntdbclient.ClientStore, error) {
+	if path == "" {
+		path = "oauth2_clients.db"
+	}
+	cs, err := buntdbclient.New(path)
+	if err != nil {
+		return nil, fmt.Errorf("problem creating clients store: %v", err)
+	}
+	return cs, nil
+}
+
+func setupOAuthServer(logger log.Logger, tokenStore oauth2.TokenStore, clientStore *buntdbclient.ClientStore) (*oauth, error) {
+	out := &oauth{
+		logger: logger,
 	}
 
 	// Create our session manager
@@ -62,15 +79,7 @@ func setupOauthServer(logger log.Logger) (*oauth, error) {
 	out.manager.SetClientTokenCfg(cfg)
 
 	// Setup oauth2 clients database
-	path = os.Getenv("OAUTH2_CLIENTS_DB_PATH")
-	if path == "" {
-		path = "oauth2_clients.db"
-	}
-	cs, err := buntdbclient.New(path)
-	if err != nil {
-		return nil, fmt.Errorf("problem creating clients store: %v", err)
-	}
-	out.clientStore = cs
+	out.clientStore = clientStore
 	out.manager.MapClientStorage(out.clientStore)
 
 	out.server = server.NewDefaultServer(out.manager)
@@ -104,22 +113,30 @@ func addOAuthRoutes(r *mux.Router, o *oauth, logger log.Logger, auth authable) {
 	r.Methods("POST").Path("/oauth2/token").HandlerFunc(o.tokenHandler)
 }
 
-// authorizeHandler checks the request for appropriate oauth information
-// and returns "200 OK" if the token is valid.
-func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
-	w = wrapResponseWriter(w, r, "oauth.authorizeHandler")
-
+// requestHasValidOAuthToken hooks into the go-oauth2 methods to validate
+// a 'Bearer ...' Authorization header and the token.
+func (o *oauth) requestHasValidOAuthToken(r *http.Request) error {
 	// We aren't using HandleAuthorizeRequest here because that assumes redirect_uri
 	// exists on the request. We're just checking for a valid token.
 	ti, err := o.server.ValidationBearerToken(r)
 	if err != nil {
 		authFailures.With("method", "oauth2").Add(1)
-		encodeError(w, err)
-		return
+		return err
 	}
 	if ti.GetClientID() == "" {
 		authFailures.With("method", "oauth2").Add(1)
-		encodeError(w, fmt.Errorf("missing client_id"))
+		return errNoClientId
+	}
+	return nil
+}
+
+// authorizeHandler checks the request for appropriate oauth information
+// and returns "200 OK" if the token is valid.
+func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
+	w = wrapResponseWriter(w, r, "oauth.authorizeHandler")
+
+	if err := o.requestHasValidOAuthToken(r); err != nil {
+		encodeError(w, err)
 		return
 	}
 
