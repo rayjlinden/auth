@@ -4,11 +4,11 @@
 
 // buntdbclient implements ClientStore from gopkg.in/oauth2.v3
 // using BuntDB (https://github.com/tidwall/buntdb).
-
+//
 // A few extra operations have been added though, such as Set and
 // GetByUserId. These were needed for ourusecase as we're mutating
 // the oauth clients.
-
+//
 // Tests can be ran with a database in the package dir, just add -debug
 // as a flag to 'go test'.
 // The local database will be deleted before tests are ran each time.
