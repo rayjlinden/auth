@@ -15,8 +15,8 @@ before_install:
 - go get -u honnef.co/go/tools/cmd/megacheck
 - go get golang.org/x/tools/cmd/cover
 # deploys help
-- go get github.com/mitchellh/gox
-- go get github.com/tcnksm/ghr
+# - go get github.com/mitchellh/gox
+# - go get github.com/tcnksm/ghr
 before_script:
 - GOFILES=$(find . -type f -name '*.go' | grep -v vendor)
 script:
@@ -29,23 +29,23 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
   - make docker
-deploy:
-  provider: releases
-  skip_cleanup: true
-  api_key:
-    secure: $GITHUB_TOKEN
-  file:
-    - auth.windows.amd64.exe
-    - auth.windows.386.exe
-    - auth.darwin.amd64
-    - auth.linux.amd64
-    - auth.linux.386
-  on:
-      repo: moov-io/auth
-      tags: true
-      condition: $LATEST = true
-      branch: master
-  provider: script
-  script: bash docker_push
-  on:
-    branch: master
+# deploy:
+#   provider: releases
+#   skip_cleanup: true
+#   api_key:
+#     secure: $GITHUB_TOKEN
+#   file:
+#     - auth.windows.amd64.exe
+#     - auth.windows.386.exe
+#     - auth.darwin.amd64
+#     - auth.linux.amd64
+#     - auth.linux.386
+#   on:
+#       repo: moov-io/auth
+#       tags: true
+#       condition: $LATEST = true
+#       branch: master
+#   provider: script
+#   script: bash docker_push
+#   on:
+#     branch: master
