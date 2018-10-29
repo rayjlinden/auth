@@ -30,6 +30,7 @@ require (
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/moov-io/base v0.0.0-20181030202447-dedcf5cc8055
 	github.com/moul/http2curl v0.0.0-20170919181001-9ac6cf4d929b // indirect
 	github.com/onsi/ginkgo v1.6.0 // indirect
 	github.com/onsi/gomega v1.4.1 // indirect
