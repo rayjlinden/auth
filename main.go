@@ -15,7 +15,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/moov-io/auth/admin"
+	"github.com/moov-io/base/admin"
+	"github.com/moov-io/base/http/bind"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -25,7 +26,8 @@ import (
 )
 
 var (
-	httpAddr = flag.String("http.addr", ":8080", "HTTP listen address")
+	httpAddr  = flag.String("http.addr", bind.HTTP("auth"), "HTTP listen address")
+	adminAddr = flag.String("admin.addr", bind.Admin("auth"), "Admin HTTP listen address")
 
 	logger log.Logger
 
@@ -84,7 +86,7 @@ func main() {
 		errs <- fmt.Errorf("%s", <-c)
 	}()
 
-	adminServer := admin.NewServer()
+	adminServer := admin.NewServer(*adminAddr)
 	go func() {
 		logger.Log("admin", fmt.Sprintf("listening on %s", adminServer.BindAddr()))
 		if err := adminServer.Listen(); err != nil {
