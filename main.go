@@ -114,10 +114,20 @@ func main() {
 		}
 	}()
 
-	oauth, err := setupOauthServer(logger)
+	tokenStore, err := setupOAuthTokenStore(os.Getenv("OAUTH2_TOKENS_DB_PATH"))
 	if err != nil {
-		logger.Log("oauth", err)
-		errs <- err
+		logger.Log("main", fmt.Sprintf("Failed to setup OAuth2 token store: %v", err))
+		os.Exit(1)
+	}
+	clientStore, err := setupOAuthClientStore(os.Getenv("OAUTH2_CLIENTS_DB_PATH"))
+	if err != nil {
+		logger.Log("main", fmt.Sprintf("Failed to setup OAuth2 client store: %v", err))
+		os.Exit(1)
+	}
+	oauth, err := setupOAuthServer(logger, tokenStore, clientStore)
+	if err != nil {
+		logger.Log("main", fmt.Sprintf("Failed to setup OAuth2 service: %v", err))
+		os.Exit(1)
 	}
 	defer func() {
 		if err := oauth.shutdown(); err != nil {
