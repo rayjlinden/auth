@@ -85,10 +85,13 @@ func generateID() string {
 }
 
 type userRepository interface {
+	// lookupByUserId returns a User according to the id provided.
+	// This function can return nil, nil meaning no user was found.
 	lookupByUserId(id string) (*User, error)
 
 	// lookupByEmail finds a user by the given email address.
-	// It's recommended you provide User.cleanEmail()
+	//
+	// This function can return nil, nil meaning no user was found
 	lookupByEmail(email string) (*User, error)
 
 	upsert(*User) error
@@ -125,6 +128,9 @@ limit 1`
 		s.log.Log("user", fmt.Sprintf("bad users.created_at format %q: %v", createdAt, err))
 	}
 	u.CreatedAt = t
+	if u.Email == "" {
+		return nil, nil
+	}
 	return u, nil
 }
 
@@ -140,7 +146,7 @@ func (s *sqliteUserRepository) lookupByEmail(email string) (*User, error) {
 	row.Scan(&userId)
 
 	if userId == "" {
-		return nil, errors.New("user not found")
+		return nil, nil
 	}
 	return s.lookupByUserId(userId)
 }

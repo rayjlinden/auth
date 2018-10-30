@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/go-kit/kit/log"
 )
@@ -101,5 +102,97 @@ func TestUser__cleanEmail(t *testing.T) {
 		if res != cases[i].expected {
 			t.Errorf("got %q", res)
 		}
+	}
+}
+
+func TestUserRepository(t *testing.T) {
+	repo, err := createTestUserRepository()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer repo.cleanup()
+
+	u, err := repo.lookupByUserId(generateID())
+	if err != nil {
+		t.Error(err)
+	}
+	if u != nil {
+		t.Errorf("expected no user, got %v", u)
+	}
+
+	u, err = repo.lookupByEmail(generateID())
+	if err != nil {
+		t.Error(err)
+	}
+	if u != nil {
+		t.Errorf("expected no user, got %v", u)
+	}
+
+	// create and insert user
+	userId := generateID()
+	u = &User{
+		ID:        userId,
+		Email:     "test@moov.io",
+		FirstName: "Jane",
+		LastName:  "Doe",
+		Phone:     "111.222.3333",
+		CreatedAt: time.Now().Add(-1 * time.Second),
+	}
+
+	if err := repo.upsert(u); err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure user was written
+	uu, err := repo.lookupByUserId(userId)
+	if err != nil {
+		t.Error(err)
+	}
+	if uu == nil {
+		t.Error("expected user")
+	}
+
+	uu, err = repo.lookupByEmail(u.Email)
+	if err != nil {
+		t.Error(err)
+	}
+	if uu == nil {
+		t.Error("expected user")
+	}
+
+	// test upsert
+	u.FirstName = "John"
+	u.LastName = "Doe"
+	u.Phone = "222.111.3333"
+	u.CompanyURL = "https://moov.io"
+	if err := repo.upsert(u); err != nil {
+		t.Fatal(err)
+	}
+
+	// verify
+	uu, err = repo.lookupByUserId(userId)
+	if err != nil {
+		t.Error(err)
+	}
+	if uu == nil {
+		t.Error("expected user")
+	}
+	if u.ID != uu.ID {
+		t.Errorf("u.ID=%q, uu.ID=%q", u.ID, uu.ID)
+	}
+	if u.FirstName != uu.FirstName {
+		t.Errorf("u.FirstName=%q, uu.FirstName=%q", u.FirstName, uu.FirstName)
+	}
+	if u.LastName != uu.LastName {
+		t.Errorf("u.LastName=%q, uu.LastName=%q", u.LastName, uu.LastName)
+	}
+	if u.Phone != uu.Phone {
+		t.Errorf("u.Phone=%q, uu.Phone=%q", u.Phone, uu.Phone)
+	}
+	if u.CompanyURL != uu.CompanyURL {
+		t.Errorf("u.CompanyURL=%q, uu.CompanyURL=%q", u.CompanyURL, uu.CompanyURL)
+	}
+	if !u.CreatedAt.Equal(uu.CreatedAt) {
+		t.Errorf("u.CreatedAt=%q, uu.CreatedAt=%q", u.CreatedAt, uu.CreatedAt)
 	}
 }

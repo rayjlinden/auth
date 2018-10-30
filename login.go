@@ -1,6 +1,7 @@
 // Copyright 2018 The Moov Authors
 // Use of this source code is governed by an Apache License
 // license that can be found in the LICENSE file.
+
 package main
 
 import (
@@ -100,12 +101,15 @@ func loginRoute(logger log.Logger, auth authable, userService userRepository) ht
 
 		// find user by email
 		u, err := userService.lookupByEmail(login.Email)
-		if err != nil {
+		if err != nil || u == nil {
 			// Mark this (and password check) as failure only because
 			// the user is involved at this point. Otherwise it's their
 			// developer's problem (i.e. bad json).
 			authFailures.With("method", "web").Add(1)
 			w.WriteHeader(http.StatusForbidden)
+			if err != nil {
+				logger.Log("login", fmt.Sprintf("problem looking up user email %q: %v", login.Email, err))
+			}
 			return
 		}
 
