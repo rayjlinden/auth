@@ -5,7 +5,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,11 +32,8 @@ func (a *testAuth) cleanup() error {
 	return os.RemoveAll(a.dir)
 }
 
-// createTestAuthable returns a new 'auth' instance
-// wrapped with a cleanup() method.
-//
-// path is optional, if empty a new ioutil.TempDir will be
-// created and optionally cleaned up.
+// createTestAuthable returns a new auth instance wrapped with a cleanup() method.
+// The sqlite database is created in a temp directory.
 func createTestAuthable() (*testAuth, error) {
 	dir, err := ioutil.TempDir("", "auth")
 	if err != nil {
@@ -64,7 +66,8 @@ func (repo *testUserRepository) cleanup() error {
 	return os.RemoveAll(repo.dir)
 }
 
-// createTestUserRepository
+// createTestUserRepository returns a sqliteUserRepository wrapped with cleanup
+// for our test database.
 func createTestUserRepository() (*testUserRepository, error) {
 	dir, err := ioutil.TempDir("", "userRepository")
 	if err != nil {
@@ -194,5 +197,64 @@ func TestUserRepository(t *testing.T) {
 	}
 	if !u.CreatedAt.Equal(uu.CreatedAt) {
 		t.Errorf("u.CreatedAt=%q, uu.CreatedAt=%q", u.CreatedAt, uu.CreatedAt)
+	}
+}
+
+func TestUser__update(t *testing.T) {
+	auth, err := createTestAuthable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo, err := createTestUserRepository()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create and insert user
+	userId := generateID()
+	u := &User{
+		ID:        userId,
+		Email:     "test@moov.io",
+		FirstName: "Jane",
+		LastName:  "Doe",
+		Phone:     "111.222.3333",
+		CreatedAt: time.Now().Add(-1 * time.Second),
+	}
+	if err := repo.upsert(u); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create test cookie
+	cookie, err := createCookie(userId, auth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := auth.writeCookie(userId, cookie); err != nil {
+		t.Fatal(err)
+	}
+
+	// Make our PATCH request
+	var body bytes.Buffer
+	err = json.NewEncoder(&body).Encode(userProfileRequest{
+		FirstName:  "first",
+		LastName:   "last",
+		Phone:      "123.456.7890",
+		CompanyURL: "https://moov.io",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("PATCH", fmt.Sprintf("/users/%s", userId), &body)
+	r.Header.Set("X-User-Id", userId)
+	r.Header.Set("X-Request-Id", generateID())
+	r.Header.Set("Cookie", fmt.Sprintf("moov_auth=%s", cookie.Value))
+
+	updateUserProfile(log.NewNopLogger(), auth, repo)(w, r)
+	w.Flush()
+
+	if w.Code != http.StatusOK {
+		t.Errorf("got %d: %v", w.Code, w.Body.String())
 	}
 }

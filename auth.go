@@ -16,7 +16,7 @@ var (
 )
 
 // extractUserId tries to find the Moov userId associated to the cookie data.
-// This function will never return a non-blank userId with a non-nil error.
+// This function will never return a blank userId with a nil error.
 func extractUserId(auth authable, r *http.Request) (string, error) {
 	cookie := extractCookie(r)
 	if cookie == nil {

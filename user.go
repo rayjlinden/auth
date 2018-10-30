@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -84,6 +86,69 @@ func generateID() string {
 	return strings.ToLower(hex.EncodeToString(bs))
 }
 
+func addUserProfileRoutes(r *mux.Router, logger log.Logger, auth authable, userRepo userRepository) {
+	r.Methods("PATCH").Path("/users/{user_id}").HandlerFunc(updateUserProfile(logger, auth, userRepo))
+}
+
+type userProfileRequest struct {
+	FirstName  string `json:"firstName,omitempty"`
+	LastName   string `json:"lastName,omitempty"`
+	Phone      string `json:"phone,omitempty"`
+	CompanyURL string `json:"companyUrl,omitempty"`
+}
+
+func updateUserProfile(logger log.Logger, auth authable, userRepo userRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "checkLogin")
+
+		userId, err := extractUserId(auth, r)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		// read request body
+		var req userProfileRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			encodeError(w, err)
+			return
+		}
+
+		// grab user records
+		user, err := userRepo.lookupByUserId(userId)
+		if err != nil {
+			encodeError(w, err)
+			return
+		}
+		if user == nil {
+			encodeError(w, errors.New("user not found"))
+			return
+		}
+
+		// Set new values
+		if req.FirstName != "" {
+			user.FirstName = req.FirstName
+		}
+		if req.LastName != "" {
+			user.LastName = req.LastName
+		}
+		if req.Phone != "" {
+			user.Phone = req.Phone
+		}
+		if req.CompanyURL != "" {
+			user.CompanyURL = req.CompanyURL
+		}
+
+		// Write user back
+		if err := userRepo.upsert(user); err != nil {
+			internalError(w, err, "user")
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
 type userRepository interface {
 	// lookupByUserId returns a User according to the id provided.
 	// This function can return nil, nil meaning no user was found.
@@ -124,6 +189,9 @@ limit 1`
 	var createdAt string // needs parsing
 	err = row.Scan(&u.Email, &createdAt, &u.FirstName, &u.LastName, &u.Phone, &u.CompanyURL)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return nil, nil // no user found
+		}
 		return nil, err
 	}
 
@@ -149,6 +217,9 @@ func (s *sqliteUserRepository) lookupByEmail(email string) (*User, error) {
 	var userId string
 	err = row.Scan(&userId)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return nil, nil // no user found
+		}
 		return nil, err
 	}
 
