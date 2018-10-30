@@ -1,3 +1,18 @@
+## v0.4.x (Upcoming)
+
+ADDITIONS
+
+- Added `GET /auth/check` endpoint that looks at HTTP Cookies and OAuth
+- Added `PATCH /users/{userId}` for updating user profile information
+
+BUG FIXES
+
+- Check database `row.Scan` errors
+
+IMPROVEMENTS
+
+- Run as unprivileged user inside Docker container
+
 ## v0.3.1 (Released 2018-10-05)
 
 BUG FIXES
