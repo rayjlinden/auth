@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 
+	moovhttp "github.com/moov-io/base/http"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 )
@@ -39,7 +41,7 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 		// and if so just respond with 200 and our usual CORS headers.
 		origMethod := r.Header.Get("X-Forwarded-Method")
 		if strings.EqualFold(origMethod, "OPTIONS") {
-			setAccessControlAllow(w, r)
+			moovhttp.SetAccessControlAllowHeaders(w, r)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -52,7 +54,7 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 		}
 		user, err := userService.lookupByUserId(userId)
 		if err != nil {
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 
@@ -61,7 +63,7 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 		w.WriteHeader(http.StatusOK)
 
 		if err := json.NewEncoder(w).Encode(user); err != nil {
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 	}
@@ -78,7 +80,7 @@ func loginRoute(logger log.Logger, auth authable, userService userRepository) ht
 
 		bs, err := read(r.Body)
 		if err != nil {
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 
@@ -91,11 +93,11 @@ func loginRoute(logger log.Logger, auth authable, userService userRepository) ht
 
 		// Basic data sanity checks
 		if err := validateEmail(login.Email); err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 		if err := validatePassword(login.Password); err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 
@@ -125,16 +127,16 @@ func loginRoute(logger log.Logger, auth authable, userService userRepository) ht
 		authSuccesses.With("method", "web").Add(1)
 		cookie, err := createCookie(u.ID, auth)
 		if err != nil {
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 		if cookie == nil {
 			logger.Log("login", fmt.Sprintf("nil cookie for userId=%s", u.ID))
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 		if err := auth.writeCookie(u.ID, cookie); err != nil {
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 
@@ -144,7 +146,7 @@ func loginRoute(logger log.Logger, auth authable, userService userRepository) ht
 		w.WriteHeader(http.StatusOK)
 
 		if err := json.NewEncoder(w).Encode(u); err != nil {
-			internalError(w, err, "login")
+			internalError(w, err)
 			return
 		}
 	}

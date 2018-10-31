@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/moov-io/base/admin"
+	moovhttp "github.com/moov-io/base/http"
 	"github.com/moov-io/base/http/bind"
 
 	"github.com/go-kit/kit/log"
@@ -149,7 +150,7 @@ func main() {
 
 	// api routes
 	router := mux.NewRouter()
-	addCORSHandler(router)
+	moovhttp.AddCORSHandler(router)
 	addPingRoute(router)
 	addOAuthRoutes(router, oauth, logger, authService)
 	addLoginRoutes(router, logger, authService, userService)

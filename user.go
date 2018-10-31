@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	moovhttp "github.com/moov-io/base/http"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
@@ -110,18 +112,18 @@ func updateUserProfile(logger log.Logger, auth authable, userRepo userRepository
 		// read request body
 		var req userProfileRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 
 		// grab user records
 		user, err := userRepo.lookupByUserId(userId)
 		if err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 		if user == nil {
-			encodeError(w, errors.New("user not found"))
+			moovhttp.Problem(w, errors.New("user not found"))
 			return
 		}
 
@@ -141,7 +143,7 @@ func updateUserProfile(logger log.Logger, auth authable, userRepo userRepository
 
 		// Write user back
 		if err := userRepo.upsert(user); err != nil {
-			internalError(w, err, "user")
+			internalError(w, err)
 			return
 		}
 
