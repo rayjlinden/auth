@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +14,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	moovhttp "github.com/moov-io/base/http"
 
 	"github.com/gorilla/mux"
 )
@@ -50,27 +51,15 @@ func read(r io.Reader) ([]byte, error) {
 	return ioutil.ReadAll(r)
 }
 
-// encodeError JSON encodes the supplied error
-//
-// The HTTP status of "400 Bad Request" is written to the
-// response.
-func encodeError(w http.ResponseWriter, err error) {
-	if err == nil {
-		return
-	}
-	w.WriteHeader(http.StatusBadRequest)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err.Error(),
-	})
-}
-
-func internalError(w http.ResponseWriter, err error, component string) {
+func internalError(w http.ResponseWriter, err error) {
 	internalServerErrors.Add(1)
+
+	file := moovhttp.InternalError(w, err)
+	component := strings.Split(file, ".go")[0]
+
 	if logger != nil {
-		logger.Log(component, err)
+		logger.Log(component, err, "source", file)
 	}
-	w.WriteHeader(http.StatusInternalServerError)
 }
 
 // extractCookie attempts to pull out our cookie from the incoming request.
@@ -106,52 +95,6 @@ func createCookie(userId string, auth authable) (*http.Cookie, error) {
 	return cookie, nil
 }
 
-// addCORSHandler captures Corss Origin Resource Sharing (CORS) requests
-// by looking at all OPTIONS requests for the Origin header, parsing that
-// and responding back with the other Access-Control-Allow-* headers.
-//
-// Docs: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-func addCORSHandler(r *mux.Router) {
-	r.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if origin == "" {
-			if logger != nil {
-				line := fmt.Sprintf("method=%s, path=%s, preflight - no origin", r.Method, r.URL.Path)
-				logger.Log("http", line)
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		setAccessControlAllow(w, r)
-		w.WriteHeader(http.StatusOK)
-	})
-}
-
-func setAccessControlAllow(w http.ResponseWriter, r *http.Request) {
-	origin := r.Header.Get("Origin")
-	// Access-Control-Allow-Origin can't be '*' with requests that send credentials.
-	// Instead, we need to explicitly set the domain (from request's Origin header)
-	//
-	// Allow requests from anyone's localhost and only from secure pages.
-	if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "https://") {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id,X-Request-Id,Content-Type")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		// Don't overwrite content-type
-		if v := w.Header().Get("Content-Type"); v == "" {
-			w.Header().Set("Content-Type", "text/plain")
-		}
-	}
-}
-
-// getRequestId extracts X-Request-Id from the http request, which
-// is used in tracing requests.
-func getRequestId(r *http.Request) string {
-	return r.Header.Get("X-Request-Id")
-}
-
 func addPingRoute(r *mux.Router) {
 	r.Methods("GET").Path("/ping").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w = wrapResponseWriter(w, r, "ping")
@@ -175,7 +118,7 @@ type responseWriter struct {
 }
 
 func (w *responseWriter) requestId() string {
-	return getRequestId(w.request)
+	return moovhttp.GetRequestId(w.request)
 }
 
 // Header returns headers added to the response
@@ -204,7 +147,7 @@ func (w *responseWriter) WriteHeader(code int) {
 	}
 	w.headersWritten = true
 
-	setAccessControlAllow(w, w.request)
+	moovhttp.SetAccessControlAllowHeaders(w, w.request)
 
 	w.rec.WriteHeader(code)
 	w.w.WriteHeader(code)

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/moov-io/auth/pkg/buntdbclient"
+	moovhttp "github.com/moov-io/base/http"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
@@ -136,7 +137,7 @@ func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	w = wrapResponseWriter(w, r, "oauth.authorizeHandler")
 
 	if err := o.requestHasValidOAuthToken(r); err != nil {
-		encodeError(w, err)
+		moovhttp.Problem(w, err)
 		return
 	}
 
@@ -155,18 +156,18 @@ func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	// We needed to inspect what's going on a bit.
 	gt, tgr, verr := o.server.ValidationTokenRequest(r)
 	if verr != nil {
-		encodeError(w, verr)
+		moovhttp.Problem(w, verr)
 		return
 	}
 	ti, verr := o.server.GetAccessToken(gt, tgr)
 	if verr != nil {
-		encodeError(w, verr)
+		moovhttp.Problem(w, verr)
 		return
 	}
 	data := o.server.GetTokenData(ti)
 	bs, err := json.Marshal(data)
 	if err != nil {
-		encodeError(w, err)
+		moovhttp.Problem(w, err)
 		return
 	}
 	// (end of copy)
@@ -203,7 +204,7 @@ func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 
 		records, err := o.clientStore.GetByUserID(userId)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
-			internalError(w, err, "oauth")
+			internalError(w, err)
 			return
 		}
 		if len(records) == 0 { // nothing found, so fake one
@@ -214,7 +215,7 @@ func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 		for i := range records {
 			err = o.clientStore.DeleteByID(records[i].GetID())
 			if err != nil && !strings.Contains(err.Error(), "not found") {
-				internalError(w, err, "oauth")
+				internalError(w, err)
 				return
 			}
 
@@ -227,7 +228,7 @@ func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 
 			// Write client into oauth clients db.
 			if err := o.clientStore.Set(clients[i].GetID(), clients[i]); err != nil {
-				internalError(w, err, "oauth")
+				internalError(w, err)
 				return
 			}
 		}
@@ -247,7 +248,7 @@ func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 			})
 		}
 		if err := json.NewEncoder(w).Encode(responseClients); err != nil {
-			internalError(w, err, "oauth")
+			internalError(w, err)
 			return
 		}
 	}

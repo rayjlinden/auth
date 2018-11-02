@@ -14,6 +14,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	moovhttp "github.com/moov-io/base/http"
+
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 )
@@ -47,7 +49,7 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 		}
 		bs, err := read(r.Body)
 		if err != nil {
-			internalError(w, err, "signup")
+			internalError(w, err)
 			return
 		}
 
@@ -61,28 +63,28 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 
 		// Basic data sanity checks
 		if err := validateEmail(signup.Email); err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 		if err := validatePassword(signup.Password); err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 		if err := validatePhone(signup.Phone); err != nil {
-			encodeError(w, err)
+			moovhttp.Problem(w, err)
 			return
 		}
 
 		// find user
 		u, err := userService.lookupByEmail(signup.Email)
 		if err != nil {
-			internalError(w, fmt.Errorf("problem looking up user email %q: %v", signup.Email, err), "signup")
+			internalError(w, fmt.Errorf("problem looking up user email %q: %v", signup.Email, err))
 			return
 		}
 		if u == nil {
 			var signup signupRequest
 			if err := json.Unmarshal(bs, &signup); err != nil {
-				encodeError(w, err)
+				moovhttp.Problem(w, err)
 				logger.Log("signup", fmt.Sprintf("failed parsing request json: %v", err))
 				return
 			}
@@ -90,7 +92,7 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 			// store user
 			userId := generateID()
 			if userId == "" {
-				internalError(w, fmt.Errorf("problem creating userId, err=%v", err), "signup")
+				internalError(w, fmt.Errorf("problem creating userId, err=%v", err))
 				return
 			}
 			u = &User{
@@ -103,12 +105,12 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 				CreatedAt:  time.Now(),
 			}
 			if err := userService.upsert(u); err != nil {
-				internalError(w, fmt.Errorf("problem writing user: %v", err), "signup")
+				internalError(w, fmt.Errorf("problem writing user: %v", err))
 				return
 			}
 
 			if err := auth.writePassword(u.ID, signup.Password); err != nil {
-				internalError(w, fmt.Errorf("problem writing user credentials: %v", err), "signup")
+				internalError(w, fmt.Errorf("problem writing user credentials: %v", err))
 				return
 			}
 
@@ -118,7 +120,7 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 			// TODO(adam): email approval link and clickthrough
 		} else {
 			// user found, so reject signup
-			encodeError(w, errors.New("user already exists"))
+			moovhttp.Problem(w, errors.New("user already exists"))
 		}
 	}
 }
