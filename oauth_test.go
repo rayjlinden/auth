@@ -108,20 +108,20 @@ func TestOAuth__BearerToken(t *testing.T) {
 
 	// missing header
 	req := httptest.NewRequest("GET", "/users/login", nil)
-	if err := o.svc.requestHasValidOAuthToken(req); err == nil {
+	if _, err := o.svc.requestHasValidOAuthToken(req); err == nil {
 		t.Errorf("expected error, no Authorization header set")
 	}
 
 	// bad header value
 	req.Header.Set("Authorization", "Bearer bad")
-	if err := o.svc.requestHasValidOAuthToken(req); err == nil {
+	if _, err := o.svc.requestHasValidOAuthToken(req); err == nil {
 		t.Errorf("expected error, no bad Authorization data")
 	}
 
 	// happy path
 	token := createOAuthToken(t, o)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.GetAccess()))
-	if err := o.svc.requestHasValidOAuthToken(req); err != nil {
+	if _, err := o.svc.requestHasValidOAuthToken(req); err != nil {
 		t.Errorf("expected no error: %v", err)
 	}
 }

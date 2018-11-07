@@ -26,7 +26,20 @@ func addLoginRoutes(router *mux.Router, logger log.Logger, auth authable, userSe
 	router.Methods("POST").Path("/users/login").HandlerFunc(loginRoute(logger, auth, userService))
 }
 
-func checkLogin(logger log.Logger, auth authable, userService userRepository) http.HandlerFunc {
+func getUserFromCookie(auth authable, repo userRepository, r *http.Request) (*User, error) {
+	// Start checking the incoming request for cookie auth
+	userId, err := extractUserId(auth, r)
+	if err != nil {
+		return nil, err
+	}
+	user, err := repo.lookupByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func checkLogin(logger log.Logger, auth authable, repo userRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w = wrapResponseWriter(w, r, "checkLogin")
 
@@ -46,20 +59,14 @@ func checkLogin(logger log.Logger, auth authable, userService userRepository) ht
 			return
 		}
 
-		// Start checking the incoming request for cookie auth
-		userId, err := extractUserId(auth, r)
+		user, err := getUserFromCookie(auth, repo, r)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
-		user, err := userService.lookupByUserId(userId)
-		if err != nil {
-			internalError(w, err)
-			return
-		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("X-User-Id", userId)
+		w.Header().Set("X-User-Id", user.ID)
 		w.WriteHeader(http.StatusOK)
 
 		if err := json.NewEncoder(w).Encode(user); err != nil {

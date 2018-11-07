@@ -6,8 +6,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-kit/kit/log"
 )
 
 func TestAuth__extractUserId(t *testing.T) {
@@ -15,6 +18,7 @@ func TestAuth__extractUserId(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer auth.cleanup()
 
 	knownUserId := generateID()
 
@@ -51,5 +55,42 @@ func TestAuth__extractUserId(t *testing.T) {
 	}
 	if userId != "" {
 		t.Errorf("got %s", userId)
+	}
+}
+
+func TestAuth__checkAuth(t *testing.T) {
+	auth, err := createTestAuthable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auth.cleanup()
+
+	o, err := createTestOAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.cleanup()
+
+	repo, err := createTestUserRepository()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer repo.cleanup()
+
+	// Setup our request
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/auth/check", nil)
+
+	// Make HTTP request
+	checkAuth(log.NewNopLogger(), auth, o.svc, repo)(w, r)
+	w.Flush()
+
+	// Since no auth information was provided we should 403
+	if w.Code != http.StatusForbidden {
+		t.Errorf("got %d", w.Code)
+	}
+
+	if v := w.Header().Get("X-User-Id"); v != "" {
+		t.Error("expected empty X-User-Id")
 	}
 }
