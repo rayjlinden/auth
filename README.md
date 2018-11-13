@@ -3,7 +3,7 @@ moov-io/auth
 
 [![GoDoc](https://godoc.org/github.com/moov-io/auth?status.svg)](https://godoc.org/github.com/moov-io/auth)
 [![Build Status](https://travis-ci.com/moov-io/auth.svg?branch=master)](https://travis-ci.com/moov-io/auth)
-[![Coverage Status](https://coveralls.io/repos/github/moov-io/auth/badge.svg?branch=master)](https://coveralls.io/github/moov-io/auth?branch=master)
+[![Coverage Status](https://codecov.io/gh/moov-io/auth/branch/master/graph/badge.svg)](https://codecov.io/gh/moov-io/auth)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moov-io/auth)](https://goreportcard.com/report/github.com/moov-io/auth)
 [![Apache 2 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/moov-io/auth/master/LICENSE)
 
