@@ -4,7 +4,8 @@ VERSION := $(shell grep -Eo '(v[0-9]+[\.][0-9]+[\.][0-9]+(-[a-zA-Z0-9]*)?)' vers
 
 build:
 	go fmt ./...
-	CGO_ENABLED=1 go build -o bin/auth .
+	@mkdir -p ./bin/
+	CGO_ENABLED=1 go build -o ./bin/auth github.com/moov-io/auth
 
 docker:
 	docker build -t moov/auth:$(VERSION) -f Dockerfile .
