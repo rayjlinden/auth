@@ -5,7 +5,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -126,14 +125,8 @@ func (w *responseWriter) Header() http.Header {
 	return w.w.Header()
 }
 
-// Write copies the sent bytes and records them, but then
-// sends the incoming array down to our empty http.ResponseWriter
+// Write proxies the provided data to the underlying http.ResponseWriter
 func (w *responseWriter) Write(b []byte) (int, error) {
-	bb := make([]byte, len(b))
-	if copy(bb, b) == 0 {
-		return 0, errors.New("empty body")
-	}
-	w.rec.Write(bb)
 	return w.w.Write(b)
 }
 
