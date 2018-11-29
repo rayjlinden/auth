@@ -1,4 +1,4 @@
-## v0.4.x (Upcoming)
+## v0.4.x (Released 2018-11-29)
 
 ADDITIONS
 
@@ -12,6 +12,7 @@ BUG FIXES
 IMPROVEMENTS
 
 - Run as unprivileged user inside Docker container
+- Return an empty JSON object (and content-type) for generated clients. (See [go-client #5](https://github.com/moov-io/go-client/issues/5))
 
 ## v0.3.1 (Released 2018-10-05)
 
