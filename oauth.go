@@ -116,19 +116,19 @@ func addOAuthRoutes(r *mux.Router, o *oauth, logger log.Logger, auth authable) {
 
 // requestHasValidOAuthToken hooks into the go-oauth2 methods to validate
 // a 'Bearer ...' Authorization header and the token.
-func (o *oauth) requestHasValidOAuthToken(r *http.Request) error {
+func (o *oauth) requestHasValidOAuthToken(r *http.Request) (oauth2.TokenInfo, error) {
 	// We aren't using HandleAuthorizeRequest here because that assumes redirect_uri
 	// exists on the request. We're just checking for a valid token.
 	ti, err := o.server.ValidationBearerToken(r)
 	if err != nil {
 		authFailures.With("method", "oauth2").Add(1)
-		return err
+		return nil, err
 	}
 	if ti.GetClientID() == "" {
 		authFailures.With("method", "oauth2").Add(1)
-		return errNoClientId
+		return nil, errNoClientId
 	}
-	return nil
+	return ti, nil
 }
 
 // authorizeHandler checks the request for appropriate oauth information
@@ -136,7 +136,7 @@ func (o *oauth) requestHasValidOAuthToken(r *http.Request) error {
 func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	w = wrapResponseWriter(w, r, "oauth.authorizeHandler")
 
-	if err := o.requestHasValidOAuthToken(r); err != nil {
+	if _, err := o.requestHasValidOAuthToken(r); err != nil {
 		moovhttp.Problem(w, err)
 		return
 	}

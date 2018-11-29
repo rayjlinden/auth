@@ -152,6 +152,7 @@ func main() {
 	router := mux.NewRouter()
 	moovhttp.AddCORSHandler(router)
 	addPingRoute(router)
+	addAuthRoutes(router, logger, authService, oauth, userService)
 	addOAuthRoutes(router, oauth, logger, authService)
 	addLoginRoutes(router, logger, authService, userService)
 	addLogoutRoutes(router, logger, authService)

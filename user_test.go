@@ -205,10 +205,13 @@ func TestUser__update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer auth.cleanup()
+
 	repo, err := createTestUserRepository()
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer repo.cleanup()
 
 	// create and insert user
 	userId := generateID()
