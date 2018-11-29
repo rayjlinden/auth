@@ -115,7 +115,9 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 			}
 
 			// signup worked, yay!
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("{}"))
 
 			// TODO(adam): email approval link and clickthrough
 		} else {
