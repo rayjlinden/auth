@@ -1,3 +1,9 @@
+## v0.4.1 (Released 2018-11-29)
+
+BUG FIXES
+
+- Fixed docker image to boot properly.
+
 ## v0.4.x (Released 2018-11-29)
 
 ADDITIONS
