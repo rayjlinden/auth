@@ -69,9 +69,13 @@ func getSqlitePath() string {
 func createConnection(path string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		err = fmt.Errorf("problem opening sqlite3 file: %v", err)
+		err = fmt.Errorf("problem opening sqlite3 file %s: %v", path, err)
 		logger.Log("sqlite", err)
 		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("problem with Ping against *sql.DB %s: %v", path, err)
 	}
 
 	prom := &promMetricCollector{}
@@ -89,7 +93,7 @@ func createConnection(path string) (*sql.DB, error) {
 // https://github.com/mattn/go-sqlite3/blob/master/_example/simple/simple.go
 // https://astaxie.gitbooks.io/build-web-application-with-golang/en/05.3.html
 func migrate(db *sql.DB, logger log.Logger) error {
-	logger.Log("sqlite", "starting sqlite migrations...") // TODO(adam): more detail?
+	logger.Log("sqlite", "starting database migrations...")
 	for i := range migrations {
 		row := migrations[i]
 		res, err := db.Exec(row)
