@@ -176,7 +176,7 @@ func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	// HandleTokenRequest currently returns nil even if the token request
 	// failed. That menas we can't clearly know if token generation passed or failed.
 	// We check ww.Code then, it'll be 0 if no WriteHeader calls were made.
-	if ww, ok := w.(*httptest.ResponseRecorder); ok && ww.Code > 400 {
+	if ww, ok := w.(*httptest.ResponseRecorder); ok && ww.Code == 0 {
 		tokenGenerations.Add(1)
 		w.Header().Set("X-User-Id", ti.GetUserID()) // only on non-errors
 	}
