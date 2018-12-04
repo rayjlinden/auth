@@ -3,6 +3,7 @@
 BUG FIXES
 
 - Fixed docker image to boot properly.
+- Send down `application/json` content-type on OAuth authorize endpoint
 
 ## v0.4.x (Released 2018-11-29)
 
