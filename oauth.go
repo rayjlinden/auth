@@ -143,8 +143,9 @@ func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Passed token check, return "200 OK"
 	authSuccesses.With("method", "oauth2").Add(1)
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 // tokenHandler passes off the request down to our oauth2 library to
