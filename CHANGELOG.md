@@ -1,9 +1,10 @@
-## v0.4.1 (Released 2018-11-29)
+## v0.4.1 (Released 2018-12-04)
 
 BUG FIXES
 
 - Fixed docker image to boot properly.
 - Send down `application/json` content-type on OAuth authorize endpoint
+- Fixed `oauth2_token_generations` Prometheus metric
 
 ## v0.4.x (Released 2018-11-29)
 
