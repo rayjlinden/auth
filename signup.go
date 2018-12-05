@@ -56,22 +56,33 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 		// read request body
 		var signup signupRequest
 		if err := json.Unmarshal(bs, &signup); err != nil {
-			logger.Log("login", err)
+			logger.Log("signup", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
+		requestId := moovhttp.GetRequestId(r)
+
 		// Basic data sanity checks
 		if err := validateEmail(signup.Email); err != nil {
 			moovhttp.Problem(w, err)
+			if requestId != "" && logger != nil {
+				logger.Log("(requestId=%s) invalid email: %v", requestId, err)
+			}
 			return
 		}
 		if err := validatePassword(signup.Password); err != nil {
 			moovhttp.Problem(w, err)
+			if requestId != "" && logger != nil {
+				logger.Log("(requestId=%s) invalid password: %v", requestId, err)
+			}
 			return
 		}
 		if err := validatePhone(signup.Phone); err != nil {
 			moovhttp.Problem(w, err)
+			if requestId != "" && logger != nil {
+				logger.Log("(requestId=%s) invalid phone number: %v", requestId, err)
+			}
 			return
 		}
 
@@ -122,7 +133,7 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 			// TODO(adam): email approval link and clickthrough
 		} else {
 			// user found, so reject signup
-			moovhttp.Problem(w, errors.New("user already exists"))
+			moovhttp.Problem(w, fmt.Errorf("user already exists - %s", signup.Email))
 		}
 	}
 }
