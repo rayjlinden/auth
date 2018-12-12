@@ -1,4 +1,8 @@
-## Unreleased
+## v0.4.2 (Released 2018-12-11)
+
+BUG FIXES
+
+- oauth: properly associate token with user (See: [#59](https://github.com/moov-io/auth/pull/59))
 
 ## v0.4.1 (Released 2018-12-04)
 
@@ -8,7 +12,7 @@ BUG FIXES
 - Send down `application/json` content-type on OAuth authorize endpoint
 - Fixed `oauth2_token_generations` Prometheus metric
 
-## v0.4.x (Released 2018-11-29)
+## v0.4.0 (Released 2018-11-29)
 
 ADDITIONS
 
