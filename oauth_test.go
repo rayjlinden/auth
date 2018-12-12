@@ -8,9 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -123,5 +125,96 @@ func TestOAuth__BearerToken(t *testing.T) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.GetAccess()))
 	if _, err := o.svc.requestHasValidOAuthToken(req); err != nil {
 		t.Errorf("expected no error: %v", err)
+	}
+}
+
+func TestOAuth__tokenHandlerNoAuth(t *testing.T) {
+	o, err := createTestOAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.cleanup()
+
+	auth, err := createTestAuthable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auth.cleanup()
+
+	// Save a client id/secret pair
+	userId := generateID()
+	client := &models.Client{
+		ID:     generateID(),
+		Secret: generateID(),
+		Domain: "api.moov.io",
+		UserID: userId,
+	}
+	if err := o.svc.clientStore.Set(client.ID, client); err != nil {
+		t.Fatal(err)
+	}
+
+	// no auth credentials present
+	url := fmt.Sprintf("/oauth2/token?grant_type=client_credentials&client_id=%s&client_secret=%s", client.ID, client.Secret)
+	req := httptest.NewRequest("POST", url, nil)
+
+	// Make our request
+	w := httptest.NewRecorder()
+	o.svc.tokenHandler(auth)(w, req)
+	w.Flush()
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("got %d HTTP status code: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "no moov_auth cookie provided") {
+		t.Errorf("got %q for resposne", w.Body.String())
+	}
+}
+
+func TestOAuth__tokenHandler(t *testing.T) {
+	o, err := createTestOAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.cleanup()
+
+	auth, err := createTestAuthable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auth.cleanup()
+
+	// Save a client id/secret pair
+	userId := generateID()
+	client := &models.Client{
+		ID:     generateID(),
+		Secret: generateID(),
+		Domain: "api.moov.io",
+		UserID: userId,
+	}
+	if err := o.svc.clientStore.Set(client.ID, client); err != nil {
+		t.Fatal(err)
+	}
+
+	// Write a cookie
+	cookie, err := createCookie(userId, auth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := auth.writeCookie(userId, cookie); err != nil {
+		t.Fatal(err)
+	}
+
+	// no auth credentials present
+	url := fmt.Sprintf("/oauth2/token?grant_type=client_credentials&client_id=%s&client_secret=%s", client.ID, client.Secret)
+	req := httptest.NewRequest("POST", url, nil)
+	req.Header.Set("Cookie", fmt.Sprintf("moov_auth=%s", cookie.Value))
+
+	// Make our request
+	w := httptest.NewRecorder()
+	o.svc.tokenHandler(auth)(w, req)
+	w.Flush()
+
+	if w.Code != http.StatusOK {
+		t.Errorf("got %d HTTP status code: %s", w.Code, w.Body.String())
 	}
 }

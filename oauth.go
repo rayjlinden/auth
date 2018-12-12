@@ -32,6 +32,7 @@ var (
 type oauth struct {
 	manager     *manage.Manager
 	clientStore *buntdbclient.ClientStore
+	tokenStore  oauth2.TokenStore
 	server      *server.Server
 
 	logger log.Logger
@@ -67,6 +68,7 @@ func setupOAuthServer(logger log.Logger, tokenStore oauth2.TokenStore, clientSto
 	// Create our session manager
 	out.manager = manage.NewDefaultManager()
 	out.manager.MapTokenStorage(tokenStore)
+	out.tokenStore = tokenStore
 
 	// Defaults from (in vendor/)
 	// gopkg.in/oauth2.v3/manage/config.go
@@ -108,9 +110,9 @@ func addOAuthRoutes(r *mux.Router, o *oauth, logger log.Logger, auth authable) {
 	// Check token routes
 	if o.server.Config.AllowGetAccessRequest {
 		// only open up GET if the server config asks for it
-		r.Methods("GET").Path("/oauth2/token").HandlerFunc(o.tokenHandler)
+		r.Methods("GET").Path("/oauth2/token").HandlerFunc(o.tokenHandler(auth))
 	}
-	r.Methods("POST").Path("/oauth2/token").HandlerFunc(o.tokenHandler)
+	r.Methods("POST").Path("/oauth2/token").HandlerFunc(o.tokenHandler(auth))
 }
 
 // requestHasValidOAuthToken hooks into the go-oauth2 methods to validate
@@ -149,41 +151,57 @@ func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
 
 // tokenHandler passes off the request down to our oauth2 library to
 // generate a token (or return an error).
-func (o *oauth) tokenHandler(w http.ResponseWriter, r *http.Request) {
-	w = wrapResponseWriter(w, r, "oauth.tokenHandler")
+func (o *oauth) tokenHandler(auth authable) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "oauth.tokenHandler")
 
-	// This block is copied from o.server.HandleTokenRequest
-	// We needed to inspect what's going on a bit.
-	gt, tgr, verr := o.server.ValidationTokenRequest(r)
-	if verr != nil {
-		moovhttp.Problem(w, verr)
-		return
-	}
-	ti, verr := o.server.GetAccessToken(gt, tgr)
-	if verr != nil {
-		moovhttp.Problem(w, verr)
-		return
-	}
-	data := o.server.GetTokenData(ti)
-	bs, err := json.Marshal(data)
-	if err != nil {
-		moovhttp.Problem(w, err)
-		return
-	}
-	// (end of copy)
+		userId, err := extractUserId(auth, r)
+		if err != nil {
+			moovhttp.Problem(w, err)
+			return
+		}
 
-	// HandleTokenRequest currently returns nil even if the token request
-	// failed. That menas we can't clearly know if token generation passed or failed.
-	// We check ww.Code then, it'll be 0 if no WriteHeader calls were made.
-	if ww, ok := w.(*responseWriter); ok && ww.rec.Code == http.StatusOK {
-		tokenGenerations.Add(1)
-		w.Header().Set("X-User-Id", ti.GetUserID()) // only on non-errors
-	}
+		// This block is copied from o.server.HandleTokenRequest
+		// We needed to inspect what's going on a bit.
+		gt, tgr, verr := o.server.ValidationTokenRequest(r)
+		if verr != nil {
+			moovhttp.Problem(w, verr)
+			return
+		}
+		ti, verr := o.server.GetAccessToken(gt, tgr)
+		if verr != nil {
+			moovhttp.Problem(w, verr)
+			return
+		}
+		data := o.server.GetTokenData(ti)
+		bs, err := json.Marshal(data)
+		if err != nil {
+			moovhttp.Problem(w, err)
+			return
+		}
+		// (end of copy)
 
-	// Write our response
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(bs)
+		// HandleTokenRequest currently returns nil even if the token request
+		// failed. That menas we can't clearly know if token generation passed or failed.
+		// We check ww.Code then, it'll be 0 if no WriteHeader calls were made.
+		if ww, ok := w.(*responseWriter); ok && ww.rec.Code == http.StatusOK {
+			tokenGenerations.Add(1)
+
+			// Save our userId on the token
+			ti.SetUserID(userId)
+			if err := o.tokenStore.Create(ti); err != nil {
+				moovhttp.InternalError(w, fmt.Errorf("unable to update OAuth token userId (%s): %v", userId, err))
+				return
+			}
+
+			w.Header().Set("X-User-Id", userId) // only on non-errors
+		}
+
+		// Write our response
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(bs)
+	}
 }
 
 // createClientHandler will create an oauth client for the authenticated user.
