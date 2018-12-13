@@ -1,3 +1,9 @@
+## v0.4.3 (Released 2018-12-13)
+
+BUG FIXES
+
+- oauth: Send back 403 HTTP status code on invalid tokens. (See: [#61](https://github.com/moov-io/auth/pull/61))
+
 ## v0.4.2 (Released 2018-12-11)
 
 BUG FIXES
