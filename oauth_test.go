@@ -128,6 +128,25 @@ func TestOAuth__BearerToken(t *testing.T) {
 	}
 }
 
+func TestOAuth__authorizeHandler(t *testing.T) {
+	o, err := createTestOAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.cleanup()
+
+	w := httptest.NewRecorder()
+
+	// no token provided
+	req := httptest.NewRequest("GET", "/oauth2/authorize", nil)
+	o.svc.authorizeHandler(w, req)
+	w.Flush()
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("got %d HTTP status", w.Code)
+	}
+}
+
 func TestOAuth__tokenHandlerNoAuth(t *testing.T) {
 	o, err := createTestOAuth()
 	if err != nil {

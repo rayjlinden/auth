@@ -138,6 +138,7 @@ func (o *oauth) authorizeHandler(w http.ResponseWriter, r *http.Request) {
 	w = wrapResponseWriter(w, r, "oauth.authorizeHandler")
 
 	if _, err := o.requestHasValidOAuthToken(r); err != nil {
+		w.WriteHeader(http.StatusForbidden)
 		moovhttp.Problem(w, err)
 		return
 	}
