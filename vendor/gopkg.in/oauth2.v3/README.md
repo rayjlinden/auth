@@ -157,12 +157,14 @@ if !ok || !token.Valid {
 }
 ```
 
-## Storage Implements
+## Store Implements
 
-* [BuntDB](https://github.com/tidwall/buntdb)(The default storage)
+* [BuntDB](https://github.com/tidwall/buntdb)(default store)
 * [Redis](https://github.com/go-oauth2/redis)
 * [MongoDB](https://github.com/go-oauth2/mongo)
+* [MySQL](https://github.com/go-oauth2/mysql)
 * [DynamoDB](https://github.com/contamobi/go-oauth2-dynamodb)
+* [XORM](https://github.com/techknowlogick/go-oauth2-xorm)
 
 ## MIT License
 
