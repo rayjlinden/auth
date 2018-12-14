@@ -54,7 +54,7 @@ func checkLogin(logger log.Logger, auth authable, repo userRepository) http.Hand
 		// and if so just respond with 200 and our usual CORS headers.
 		origMethod := r.Header.Get("X-Forwarded-Method")
 		if strings.EqualFold(origMethod, "OPTIONS") {
-			moovhttp.SetAccessControlAllowHeaders(w, r)
+			moovhttp.SetAccessControlAllowHeaders(w, r.Header.Get("Origin"))
 			w.WriteHeader(http.StatusOK)
 			return
 		}

@@ -140,7 +140,7 @@ func (w *responseWriter) WriteHeader(code int) {
 	}
 	w.headersWritten = true
 
-	moovhttp.SetAccessControlAllowHeaders(w, w.request)
+	moovhttp.SetAccessControlAllowHeaders(w, w.request.Header.Get("Origin"))
 
 	w.rec.WriteHeader(code)
 	w.w.WriteHeader(code)

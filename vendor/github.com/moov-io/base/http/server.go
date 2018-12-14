@@ -2,8 +2,6 @@
 // Use of this source code is governed by an Apache License
 // license that can be found in the LICENSE file.
 
-// Package http implements a base Moov HTTP server. This is intended to be used
-// by all services as a baseline for secure, production ready services.
 package http
 
 import (
@@ -13,8 +11,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+)
+
+const (
+	maxHeaderLength = 36
 )
 
 // Problem writes err to w while also setting the HTTP status code, content-type and marshaling
@@ -80,15 +83,14 @@ func AddCORSHandler(r *mux.Router) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		SetAccessControlAllowHeaders(w, r)
+		SetAccessControlAllowHeaders(w, r.Header.Get("Origin"))
 		w.WriteHeader(http.StatusOK)
 	})
 }
 
 // SetAccessControlAllowHeaders writes Access-Control-Allow-* headers to a response to allow
 // for further CORS-allowed requests.
-func SetAccessControlAllowHeaders(w http.ResponseWriter, r *http.Request) {
-	origin := r.Header.Get("Origin")
+func SetAccessControlAllowHeaders(w http.ResponseWriter, origin string) {
 	// Access-Control-Allow-Origin can't be '*' with requests that send credentials.
 	// Instead, we need to explicitly set the domain (from request's Origin header)
 	//
@@ -98,11 +100,6 @@ func SetAccessControlAllowHeaders(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Cookie,X-User-Id,X-Request-Id,Content-Type")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		// Don't overwrite content-type
-		if v := w.Header().Get("Content-Type"); v == "" {
-			w.Header().Set("Content-Type", "text/plain")
-		}
 	}
 }
 
@@ -114,4 +111,11 @@ func GetRequestId(r *http.Request) string {
 // GetUserId returns the Moov userId from HTTP headers
 func GetUserId(r *http.Request) string {
 	return r.Header.Get("X-User-Id")
+}
+
+func truncate(s string) string {
+	if utf8.RuneCountInString(s) > maxHeaderLength {
+		return s[:maxHeaderLength]
+	}
+	return s
 }
