@@ -25,7 +25,7 @@ require (
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0
-	github.com/moov-io/base v0.0.0-20181214205225-b01a3704afef
+	github.com/moov-io/base v0.0.0-20181214235706-7d7561f2f84d
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
