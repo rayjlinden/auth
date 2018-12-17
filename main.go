@@ -84,7 +84,7 @@ func main() {
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
+		errs <- fmt.Errorf("caught signal: %v", <-c)
 	}()
 
 	adminServer := admin.NewServer(*adminAddr)
@@ -93,7 +93,7 @@ func main() {
 		if err := adminServer.Listen(); err != nil {
 			err = fmt.Errorf("problem starting admin http: %v", err)
 			logger.Log("admin", err)
-			errs <- err
+			errs <- fmt.Errorf("admin servlet had error: %v", err)
 		}
 	}()
 	defer adminServer.Shutdown()
