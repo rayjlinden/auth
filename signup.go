@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/moov-io/base"
 	moovhttp "github.com/moov-io/base/http"
 
 	"github.com/go-kit/kit/log"
@@ -113,7 +114,7 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 				LastName:   signup.LastName,
 				Phone:      signup.Phone,
 				CompanyURL: signup.CompanyURL,
-				CreatedAt:  time.Now(),
+				CreatedAt:  base.NewTime(time.Now()),
 			}
 			if err := userService.upsert(u); err != nil {
 				internalError(w, fmt.Errorf("problem writing user: %v", err))

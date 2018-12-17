@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/moov-io/base"
 	moovhttp "github.com/moov-io/base/http"
 
 	"github.com/go-kit/kit/log"
@@ -35,7 +36,7 @@ type User struct {
 	LastName   string    `json:"lastName"`
 	Phone      string    `json:"phone"`
 	CompanyURL string    `json:"companyUrl"`
-	CreatedAt  time.Time `json:"createdAt"`
+	CreatedAt  base.Time `json:"createdAt"`
 }
 
 var (
@@ -201,7 +202,7 @@ limit 1`
 	if err != nil {
 		s.log.Log("user", fmt.Sprintf("bad users.created_at format %q: %v", createdAt, err))
 	}
-	u.CreatedAt = t
+	u.CreatedAt = base.NewTime(t)
 	if u.Email == "" {
 		return nil, nil
 	}

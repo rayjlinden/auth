@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/moov-io/base"
 )
 
 func TestLogin__forwardedPreflight(t *testing.T) {
@@ -66,7 +68,7 @@ func TestLogin__getUserFromCookie(t *testing.T) {
 		FirstName: "Jane",
 		LastName:  "Doe",
 		Phone:     "111.222.3333",
-		CreatedAt: time.Now().Add(-1 * time.Second),
+		CreatedAt: base.NewTime(time.Now().Add(-1 * time.Second)),
 	}
 	if err := repo.upsert(u); err != nil {
 		t.Fatal(err)
