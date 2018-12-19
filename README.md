@@ -23,9 +23,23 @@ This project is currently pre-production and could change without much notice, h
 
 ## Getting Started / Install
 
-You can download [our docker image `moov/auth`](https://hub.docker.com/r/moov/auth/) from Docker Hub or use this repository. No configuration is required to serve on `localhost:8080`.
+You can download [our docker image `moov/auth`](https://hub.docker.com/r/moov/auth/) from Docker Hub or use this repository. No configuration is required to serve on `:8081` and metrics at `:9091/metrics` in Prometheus format.
 
-Metrics are served at `localhost:9090/metrics` in Prometheus format.
+Also, `go run` works:
+
+```
+$ cd moov/auth # wherever this project lives
+
+$ go run .
+ts=2018-12-13T19:18:11.062095Z caller=main.go:80 startup="Starting auth server version v0.4.3-dev"
+ts=2018-12-13T19:18:11.062633Z caller=main.go:103 main="sqlite version 3.25.2"
+ts=2018-12-13T19:18:11.062617Z caller=main.go:92 admin="listening on :9091"
+ts=2018-12-13T19:18:11.064059Z caller=sqlite.go:96 sqlite="starting database migrations..."
+ts=2018-12-13T19:18:11.064153Z caller=sqlite.go:105 sqlite="migration #0 [create table if not exists users(user_id...] changed 0 rows"
+... (more database migration log lines)
+ts=2018-12-13T19:18:11.064345Z caller=sqlite.go:108 sqlite="finished migrations"
+ts=2018-12-13T19:18:11.066804Z caller=main.go:189 transport=HTTP addr=:8081
+```
 
 ### Configuration
 
@@ -81,8 +95,7 @@ Twitter [@moov_io](https://twitter.com/moov_io)	| You can follow Moov.IO's Twitt
 
 ## Contributing
 
-TODO(adam): contrib and CoC docs
-Yes please! Please review our [Contributing guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) to get started!
+Yes please! Please review our [Contributing guide](CONTRIBUTING.md) and [Code of Conduct](https://github.com/moov-io/ach/blob/master/CODE_OF_CONDUCT.md) to get started!
 
 Note: This project uses Go Modules, which requires Go 1.11 or higher, but we ship the vendor directory in our repository.
 
