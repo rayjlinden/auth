@@ -8,7 +8,7 @@ build:
 	CGO_ENABLED=1 go build -o ./bin/auth github.com/moov-io/auth
 
 docker:
-	docker build -t moov/auth:$(VERSION) -f Dockerfile .
+	docker build --pull -t moov/auth:$(VERSION) -f Dockerfile .
 	docker tag moov/auth:$(VERSION) moov/auth:latest
 
 release: docker AUTHORS
