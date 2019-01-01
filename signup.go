@@ -68,21 +68,21 @@ func signupRoute(auth authable, userService userRepository) func(w http.Response
 		if err := validateEmail(signup.Email); err != nil {
 			moovhttp.Problem(w, err)
 			if requestId != "" && logger != nil {
-				logger.Log("(requestId=%s) invalid email: %v", requestId, err)
+				logger.Log("signup", fmt.Sprintf("(requestId=%s) invalid email: %v", requestId, err))
 			}
 			return
 		}
 		if err := validatePassword(signup.Password); err != nil {
 			moovhttp.Problem(w, err)
 			if requestId != "" && logger != nil {
-				logger.Log("(requestId=%s) invalid password: %v", requestId, err)
+				logger.Log("signup", fmt.Sprintf("(requestId=%s) invalid password: %v", requestId, err))
 			}
 			return
 		}
 		if err := validatePhone(signup.Phone); err != nil {
 			moovhttp.Problem(w, err)
 			if requestId != "" && logger != nil {
-				logger.Log("(requestId=%s) invalid phone number: %v", requestId, err)
+				logger.Log("signup", fmt.Sprintf("(requestId=%s) invalid phone number: %v", requestId, err))
 			}
 			return
 		}
