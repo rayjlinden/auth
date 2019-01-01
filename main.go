@@ -80,20 +80,19 @@ func main() {
 	logger.Log("startup", fmt.Sprintf("Starting auth server version %s", Version))
 
 	// Listen for application termination.
-	errs := make(chan error)
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("caught signal: %v", <-c)
+		logger.Log("exit", fmt.Sprintf("caught signal: %v", <-c))
+		os.Exit(0)
 	}()
 
 	adminServer := admin.NewServer(*adminAddr)
 	go func() {
 		logger.Log("admin", fmt.Sprintf("listening on %s", adminServer.BindAddr()))
 		if err := adminServer.Listen(); err != nil {
-			err = fmt.Errorf("problem starting admin http: %v", err)
-			logger.Log("admin", err)
-			errs <- fmt.Errorf("admin servlet had error: %v", err)
+			logger.Log("admin", fmt.Errorf("problem starting admin http: %v", err))
+			os.Exit(1)
 		}
 	}()
 	defer adminServer.Shutdown()
@@ -104,23 +103,23 @@ func main() {
 	}
 	db, err := createConnection(getSqlitePath())
 	if err != nil {
-		logger.Log("admin", err)
+		logger.Log("main", fmt.Errorf("database connection error: %v", err))
 		os.Exit(1)
 	}
 	if err := migrate(db, logger); err != nil {
-		logger.Log("admin", err)
+		logger.Log("main", fmt.Errorf("database migration error: %v", err))
 		os.Exit(1)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			logger.Log("admin", err)
+			logger.Log("main", fmt.Errorf("database Close error: %v", err))
+			os.Exit(1)
 		}
 	}()
 
 	tokenStore, err := setupOAuthTokenStore(os.Getenv("OAUTH2_TOKENS_DB_PATH"))
 	if err != nil {
 		logger.Log("main", fmt.Sprintf("Failed to setup OAuth2 token store: %v", err))
-		os.Exit(1)
 	}
 	clientStore, err := setupOAuthClientStore(os.Getenv("OAUTH2_CLIENTS_DB_PATH"))
 	if err != nil {
@@ -134,7 +133,8 @@ func main() {
 	}
 	defer func() {
 		if err := oauth.shutdown(); err != nil {
-			logger.Log("oauth", err)
+			logger.Log("main", fmt.Errorf("oauth shutdown error: %v", err))
+			os.Exit(1)
 		}
 	}()
 
@@ -174,27 +174,26 @@ func main() {
 	}
 	shutdownServer := func() {
 		if err := serve.Shutdown(context.TODO()); err != nil {
-			logger.Log("shutdown", err)
+			logger.Log("main", fmt.Errorf("server shutdown: %v", err))
+			os.Exit(1)
 		}
 	}
 	defer shutdownServer()
 
-	go func() {
-		if serveViaTLS {
-			logger.Log("transport", "HTTPS", "addr", *httpAddr)
-			if err := serve.ListenAndServeTLS(tlsCertificate, tlsPrivateKey); err != nil {
-				logger.Log("main", err)
-			}
-		} else {
-			logger.Log("transport", "HTTP", "addr", *httpAddr)
-			if err := serve.ListenAndServe(); err != nil {
-				logger.Log("main", err)
-			}
+	// Block on HTTP server bind
+	if serveViaTLS {
+		logger.Log("transport", "HTTPS", "addr", *httpAddr)
+		if err := serve.ListenAndServeTLS(tlsCertificate, tlsPrivateKey); err != nil {
+			logger.Log("main", fmt.Errorf("ListenAndServeTLS: %v", err))
+			os.Exit(1)
 		}
-	}()
-
-	if err := <-errs; err != nil {
-		logger.Log("exit", err)
+	} else {
+		logger.Log("transport", "HTTP", "addr", *httpAddr)
+		if err := serve.ListenAndServe(); err != nil {
+			logger.Log("main", fmt.Errorf("ListenAndServe: %v", err))
+			os.Exit(1)
+		}
 	}
-	os.Exit(0)
+
+	os.Exit(1)
 }
