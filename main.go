@@ -120,6 +120,7 @@ func main() {
 	tokenStore, err := setupOAuthTokenStore(os.Getenv("OAUTH2_TOKENS_DB_PATH"))
 	if err != nil {
 		logger.Log("main", fmt.Sprintf("Failed to setup OAuth2 token store: %v", err))
+		os.Exit(1)
 	}
 	clientStore, err := setupOAuthClientStore(os.Getenv("OAUTH2_CLIENTS_DB_PATH"))
 	if err != nil {
