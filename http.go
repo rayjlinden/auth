@@ -149,7 +149,7 @@ func (w *responseWriter) WriteHeader(code int) {
 }
 
 func (w *responseWriter) callback() {
-	diff := time.Now().Sub(w.start)
+	diff := time.Since(w.start)
 	routeHistogram.With("route", w.method).Observe(diff.Seconds())
 
 	if w.method != "" && w.requestId() != "" {

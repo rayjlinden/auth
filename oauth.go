@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/moov-io/auth/pkg/buntdbclient"
+	"github.com/moov-io/auth/pkg/oauthdb"
 	moovhttp "github.com/moov-io/base/http"
 
 	"github.com/go-kit/kit/log"
@@ -22,7 +22,6 @@ import (
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
 	"gopkg.in/oauth2.v3/server"
-	"gopkg.in/oauth2.v3/store"
 )
 
 var (
@@ -31,7 +30,7 @@ var (
 
 type oauth struct {
 	manager     *manage.Manager
-	clientStore *buntdbclient.ClientStore
+	clientStore *oauthdb.ClientStore
 	tokenStore  oauth2.TokenStore
 	server      *server.Server
 
@@ -39,28 +38,20 @@ type oauth struct {
 }
 
 func setupOAuthTokenStore(path string) (oauth2.TokenStore, error) {
-	if path == "" {
-		path = "oauth2_tokens.db"
+	if strings.Contains(path, "..") {
+		return nil, fmt.Errorf("setupOAuthTokenStore requires absolute path, but got %s", path)
 	}
-	tokenStore, err := store.NewFileTokenStore(path)
-	if err != nil {
-		return nil, fmt.Errorf("problem creating token store: %v", err)
-	}
-	return tokenStore, nil
+	return oauthdb.NewTokenStoreDB(fmt.Sprintf("file:%s", path))
 }
 
-func setupOAuthClientStore(path string) (*buntdbclient.ClientStore, error) {
-	if path == "" {
-		path = "oauth2_clients.db"
+func setupOAuthClientStore(path string) (*oauthdb.ClientStore, error) {
+	if strings.Contains(path, "..") {
+		return nil, fmt.Errorf("setupOAuthClientStore requires absolute path, but got %s", path)
 	}
-	cs, err := buntdbclient.New(path)
-	if err != nil {
-		return nil, fmt.Errorf("problem creating clients store: %v", err)
-	}
-	return cs, nil
+	return oauthdb.NewClientStoreDB(fmt.Sprintf("file:%s", path))
 }
 
-func setupOAuthServer(logger log.Logger, tokenStore oauth2.TokenStore, clientStore *buntdbclient.ClientStore) (*oauth, error) {
+func setupOAuthServer(logger log.Logger, clientStore *oauthdb.ClientStore, tokenStore oauth2.TokenStore) (*oauth, error) {
 	out := &oauth{
 		logger: logger,
 	}
