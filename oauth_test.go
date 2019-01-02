@@ -71,7 +71,7 @@ func createTestOAuth() (*testOAuth, error) {
 		return nil, err
 	}
 
-	svc, err := setupOAuthServer(log.NewNopLogger(), tokenStore, clientStore)
+	svc, err := setupOAuthServer(log.NewNopLogger(), clientStore, tokenStore)
 	if err != nil {
 		return nil, err
 	}
@@ -84,21 +84,34 @@ func createTestOAuth() (*testOAuth, error) {
 	}, nil
 }
 
-func createOAuthToken(t *testing.T, o *testOAuth) *models.Token {
+func createOAuthClient(t *testing.T, o *testOAuth, userId string) (*models.Client, *models.Token) {
 	t.Helper()
 
+	client := &models.Client{
+		ID:     generateID(),
+		Secret: generateID(),
+		Domain: "api.moov.io",
+		UserID: userId,
+	}
+	if err := o.svc.clientStore.Set(client.ID, client); err != nil {
+		t.Fatal(err)
+		return nil, nil
+	}
+
 	token := &models.Token{
-		ClientID:        generateID(),
-		Scope:           "read",
+		ClientID:        client.ID,
+		UserID:          userId,
 		Access:          generateID(),
 		AccessCreateAt:  time.Now().Add(-1 * time.Second), // in the past
 		AccessExpiresIn: 30 * time.Minute,                 // the future
 	}
+
 	if err := o.tokenStore.Create(token); err != nil {
 		t.Fatal(err)
-		return nil
+		return nil, nil
 	}
-	return token
+
+	return client, token
 }
 
 func TestOAuth__BearerToken(t *testing.T) {
@@ -121,8 +134,11 @@ func TestOAuth__BearerToken(t *testing.T) {
 	}
 
 	// happy path
-	token := createOAuthToken(t, o)
+	userId := generateID()
+	_, token := createOAuthClient(t, o, userId)
+
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.GetAccess()))
+
 	if _, err := o.svc.requestHasValidOAuthToken(req); err != nil {
 		t.Errorf("expected no error: %v", err)
 	}
@@ -202,25 +218,18 @@ func TestOAuth__tokenHandler(t *testing.T) {
 	}
 	defer auth.cleanup()
 
-	// Save a client id/secret pair
 	userId := generateID()
-	client := &models.Client{
-		ID:     generateID(),
-		Secret: generateID(),
-		Domain: "api.moov.io",
-		UserID: userId,
-	}
-	if err := o.svc.clientStore.Set(client.ID, client); err != nil {
-		t.Fatal(err)
-	}
 
 	// Write a cookie
 	cookie, err := createCookie(userId, auth)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := auth.writeCookie(userId, cookie); err != nil {
-		t.Fatal(err)
+
+	// Save a client id/secret pair
+	client, _ := createOAuthClient(t, o, userId)
+	if client == nil {
+		t.Fatalf("nil *models.Client: %v", client)
 	}
 
 	// no auth credentials present

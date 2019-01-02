@@ -49,8 +49,8 @@ The follow are environment variables can be configured:
 - `DOMAIN`: Domain to set on cookies.
 
 **Optional**
-- `OAUTH2_CLIENTS_DB_PATH`: File path to our oauth2 clients database.
-- `OAUTH2_TOKENS_DB_PATH`: File path to our oauth2 tokens database.
+- `OAUTH2_CLIENTS_DSN`: Data Source Name (DSN) for the OAuth2 clients database.
+- `OAUTH2_TOKENS_DSN`: Data Source Name (DSN) for the OAuth2 tokens database.
 - `SQLITE_DB_PATH`: File path to our sqlite database
 - `TLS_CERT` and `TLS_KEY`: File paths to TLS certificate and keyfile (in PEM encoding)
 
