@@ -1,4 +1,4 @@
-## v0.5.0 (Unreleased)
+## v0.5.0 (Released 2019-01-02)
 
 CHANGES
 
