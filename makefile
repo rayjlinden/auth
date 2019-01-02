@@ -16,9 +16,9 @@ release: docker AUTHORS
 	git tag -f $(VERSION)
 
 release-push:
-	echo "$DOCKER_PASSWORD" | docker login -u wadearnold --password-stdin
-	git push origin $(VERSION)
 	docker push moov/auth:$(VERSION)
+	git push origin master
+	git push --tags origin $(VERSION)
 
 # From https://github.com/genuinetools/img
 .PHONY: AUTHORS
