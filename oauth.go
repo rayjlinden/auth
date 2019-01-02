@@ -37,18 +37,18 @@ type oauth struct {
 	logger log.Logger
 }
 
-func setupOAuthTokenStore(path string) (oauth2.TokenStore, error) {
-	if strings.Contains(path, "..") {
-		return nil, fmt.Errorf("setupOAuthTokenStore requires absolute path, but got %s", path)
+func setupOAuthTokenStore(connStr string) (oauth2.TokenStore, error) {
+	if connStr == "" {
+		connStr = "file:oauth2_tokens.db"
 	}
-	return oauthdb.NewTokenStoreDB(path)
+	return oauthdb.NewTokenStoreDB(connStr)
 }
 
-func setupOAuthClientStore(path string) (*oauthdb.ClientStore, error) {
-	if strings.Contains(path, "..") {
-		return nil, fmt.Errorf("setupOAuthClientStore requires absolute path, but got %s", path)
+func setupOAuthClientStore(connStr string) (*oauthdb.ClientStore, error) {
+	if connStr == "" {
+		connStr = "file:oauth2_clients.db"
 	}
-	return oauthdb.NewClientStoreDB(path)
+	return oauthdb.NewClientStoreDB(connStr)
 }
 
 func setupOAuthServer(logger log.Logger, clientStore *oauthdb.ClientStore, tokenStore oauth2.TokenStore) (*oauth, error) {
