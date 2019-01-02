@@ -1,3 +1,17 @@
+## v0.5.0 (Unreleased)
+
+CHANGES
+
+- Removed buntdb in favor of sqlite for OAuth2 client and token storage.
+
+BUG FIXES
+
+- Switch to github.com/moov-io/base's `Time` type.
+
+IMPROVEMENTS
+
+- Better error handling in `main()`.
+
 ## v0.4.3 (Released 2018-12-13)
 
 BUG FIXES
