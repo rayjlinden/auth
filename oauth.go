@@ -41,14 +41,14 @@ func setupOAuthTokenStore(path string) (oauth2.TokenStore, error) {
 	if strings.Contains(path, "..") {
 		return nil, fmt.Errorf("setupOAuthTokenStore requires absolute path, but got %s", path)
 	}
-	return oauthdb.NewTokenStoreDB(fmt.Sprintf("file:%s", path))
+	return oauthdb.NewTokenStoreDB(path)
 }
 
 func setupOAuthClientStore(path string) (*oauthdb.ClientStore, error) {
 	if strings.Contains(path, "..") {
 		return nil, fmt.Errorf("setupOAuthClientStore requires absolute path, but got %s", path)
 	}
-	return oauthdb.NewClientStoreDB(fmt.Sprintf("file:%s", path))
+	return oauthdb.NewClientStoreDB(path)
 }
 
 func setupOAuthServer(logger log.Logger, clientStore *oauthdb.ClientStore, tokenStore oauth2.TokenStore) (*oauth, error) {

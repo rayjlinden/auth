@@ -62,11 +62,11 @@ func createTestOAuth() (*testOAuth, error) {
 		return nil, err
 	}
 
-	tokenStore, err := setupOAuthTokenStore(filepath.Join(dir, "oauth2_tokens.db"))
+	tokenStore, err := setupOAuthTokenStore("file:" + filepath.Join(dir, "oauth2_tokens.db"))
 	if err != nil {
 		return nil, err
 	}
-	clientStore, err := setupOAuthClientStore(filepath.Join(dir, "oauth2_clients.db"))
+	clientStore, err := setupOAuthClientStore("file:" + filepath.Join(dir, "oauth2_clients.db"))
 	if err != nil {
 		return nil, err
 	}
