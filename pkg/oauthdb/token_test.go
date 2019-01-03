@@ -39,6 +39,48 @@ func createTestTokenStore() (*testTokenStore, error) {
 	}, nil
 }
 
+func TestTokenStore__Create(t *testing.T) {
+	ts, err := createTestTokenStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ts.Close()
+
+	// write something
+	userId := generateID()
+	tk := &models.Token{
+		ClientID:        generateID(),
+		UserID:          userId,
+		Access:          generateID(),
+		AccessCreateAt:  time.Now().Add(-1 * time.Second), // in the past
+		AccessExpiresIn: 30 * time.Minute,                 // the future
+	}
+	if err := ts.Create(tk); err != nil {
+		t.Fatal(err)
+	}
+
+	// read something
+	token, err := ts.GetByAccess(tk.Access)
+	if err != nil || token == nil {
+		t.Fatalf("expected nothing, but got token=%v err=%v", token, err)
+	}
+
+	// Ok, cool - let's change the UserId now and watch .Create update that
+	tk.SetUserID(generateID())
+	if err := ts.Create(tk); err != nil {
+		t.Fatal(err)
+	}
+
+	// Read that token back and match userIds
+	token2, err := ts.GetByAccess(tk.Access)
+	if err != nil || token2 == nil {
+		t.Fatalf("expected nothing, but got token=%v err=%v", token2, err)
+	}
+	if token2.GetUserID() != tk.GetUserID() {
+		t.Fatalf("expected userId to update, but didn't")
+	}
+}
+
 func TestTokenStore__ByAccess(t *testing.T) {
 	ts, err := createTestTokenStore()
 	if err != nil {

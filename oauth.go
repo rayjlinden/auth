@@ -179,7 +179,7 @@ func (o *oauth) tokenHandler(auth authable) http.HandlerFunc {
 		if ww, ok := w.(*responseWriter); ok && ww.rec.Code == http.StatusOK {
 			tokenGenerations.Add(1)
 
-			// Save our userId on the token
+			// Set userId on the token and update in our DB.
 			ti.SetUserID(userId)
 			if err := o.tokenStore.Create(ti); err != nil {
 				moovhttp.InternalError(w, fmt.Errorf("unable to update OAuth token userId (%s): %v", userId, err))

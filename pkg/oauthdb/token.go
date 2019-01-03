@@ -71,14 +71,17 @@ func (ts *TokenStore) migrate() error {
 		return errors.New("TokenStore: missing underlying *sql.DB")
 	}
 	queries := []string{
-		`create table if not exists oauth2_tokens(client_id, user_id, redirect_uri, scope, code, code_expires_in, access, access_expires_in, refresh, refresh_expires_in, created_at datetime, deleted_at datetime)`,
+		`create table if not exists oauth2_tokens(client_id, user_id, redirect_uri, scope, code, code_expires_in, access, access_expires_in, refresh, refresh_expires_in, created_at datetime, deleted_at datetime, unique (code, access, refresh) on conflict abort)`,
 	}
 	return migrate(ts.db, queries)
 }
 
 // Create writes an oauth2.TokenInfo into the underlying database.
+//
+// If an existing token exists (matching code, access, and refresh) then that row will be
+// replaced by the incoming token. This is done to update the userId on a given token.
 func (ts *TokenStore) Create(info oauth2.TokenInfo) error {
-	query := `insert into oauth2_tokens (client_id, user_id, redirect_uri, scope, code, code_expires_in, access, access_expires_in, refresh, refresh_expires_in, created_at)
+	query := `replace into oauth2_tokens (client_id, user_id, redirect_uri, scope, code, code_expires_in, access, access_expires_in, refresh, refresh_expires_in, created_at)
 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	stmt, err := ts.db.Prepare(query)
 	if err != nil {
