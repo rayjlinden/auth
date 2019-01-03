@@ -82,7 +82,7 @@ func createCookie(userId string, auth authable) (*http.Cookie, error) {
 	cookie := &http.Cookie{
 		Domain:   Domain,
 		Expires:  time.Now().Add(cookieTTL),
-		HttpOnly: true,
+		HttpOnly: false,
 		Name:     cookieName,
 		Path:     "/",
 		Secure:   serveViaTLS,
