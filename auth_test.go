@@ -94,3 +94,41 @@ func TestAuth__checkAuth(t *testing.T) {
 		t.Error("expected empty X-User-Id")
 	}
 }
+
+func TestAuth__forwardedPreflight(t *testing.T) {
+	auth, err := createTestAuthable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auth.cleanup()
+
+	o, err := createTestOAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.cleanup()
+
+	repo, err := createTestUserRepository()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer repo.cleanup()
+
+	// Setup our request
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/auth/check", nil)
+
+	r.Header.Set("Origin", "http://localhost:8080")
+	r.Header.Set("X-Forwarded-Method", "OPTIONS")
+
+	checkAuth(log.NewNopLogger(), auth, o.svc, repo)(w, r)
+	w.Flush()
+
+	// Check response
+	if w.Code != http.StatusOK {
+		t.Errorf("got %d", w.Code)
+	}
+	if v := w.Header().Get("Access-Control-Allow-Origin"); v != "http://localhost:8080" {
+		t.Errorf("got %s", v)
+	}
+}

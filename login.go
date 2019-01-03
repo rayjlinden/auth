@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	moovhttp "github.com/moov-io/base/http"
 
@@ -43,20 +42,8 @@ func checkLogin(logger log.Logger, auth authable, repo userRepository) http.Hand
 	return func(w http.ResponseWriter, r *http.Request) {
 		w = wrapResponseWriter(w, r, "checkLogin")
 
-		// Our LB setup uses "forward auth" which means traefik issues an internal
-		// HTTP request to this method that checks each request for a valid cookie.
-		// We use this instead of requiring each endpoint to be aware of auth.
-		//
-		// However, when a pre-flight request comes through that also triggers an
-		// internal forward auth call into this method, but without the cookie.
-		//
-		// Thus, we need to check if the request was forwarded as a pre-flight request
-		// and if so just respond with 200 and our usual CORS headers.
-		origMethod := r.Header.Get("X-Forwarded-Method")
-		if strings.EqualFold(origMethod, "OPTIONS") {
-			moovhttp.SetAccessControlAllowHeaders(w, r.Header.Get("Origin"))
-			w.WriteHeader(http.StatusOK)
-			return
+		if allowForOptions(w, r) {
+			return // was a CORS pre-flight request
 		}
 
 		user, err := getUserFromCookie(auth, repo, r)

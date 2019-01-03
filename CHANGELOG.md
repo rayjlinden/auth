@@ -1,3 +1,8 @@
+## v0.5.1 (Released 2019-01-03)
+
+BUG FIXES
+- In `/auth/check` short-circuit forwarded OPTIONS requests around cookie/OAuth checks. We already do this in `/users/login` for CORS pre-flight requests which need '200 OK' returned.
+
 ## v0.5.0 (Released 2019-01-02)
 
 CHANGES

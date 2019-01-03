@@ -177,3 +177,25 @@ func wrapResponseWriter(w http.ResponseWriter, r *http.Request, method string) h
 		start:   time.Now(),
 	}
 }
+
+// allowForOptions checks if the request was forwarded as part of an OPTIONS pre-flight check.
+// This happens because our LB setup uses "forward auth" which means traefik issues an internal
+// HTTP request to this method that checks each request for a valid cookie.
+//
+// Thus, an OPTIONS request hitting traefik creates an internal forward auth call
+//  i.e. GET /auth/check (at time of writing)
+// which his the auth app. We need to respond '200 OK' in such a case. Pre-flight requests don't
+// contain a Cookie (otherwise a client would leak Cookies)
+//
+// The ResponseWriter will be completed with '200 OK' to pass pre-flight checks and CORS headers
+// will be written.
+func allowForOptions(w http.ResponseWriter, r *http.Request) bool {
+	// Traefik sets several X-Forwarded-* headers for us (and strips them from the public internet)
+	origMethod := r.Header.Get("X-Forwarded-Method")
+	if strings.EqualFold(origMethod, "OPTIONS") {
+		moovhttp.SetAccessControlAllowHeaders(w, r.Header.Get("Origin"))
+		w.WriteHeader(http.StatusOK)
+		return true
+	}
+	return false
+}

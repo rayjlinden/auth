@@ -43,6 +43,10 @@ func checkAuth(logger log.Logger, auth authable, o *oauth, repo userRepository) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w = wrapResponseWriter(w, r, "checkAuth")
 
+		if allowForOptions(w, r) {
+			return // was a CORS pre-flight request
+		}
+
 		user, _ := getUserFromCookie(auth, repo, r)
 		token, err := o.requestHasValidOAuthToken(r)
 
