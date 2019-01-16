@@ -1,3 +1,9 @@
+## v0.5.3 (Released 2019-01-16)
+
+BUG FIXES
+
+- Fix memory leak in some SQlite queries.
+
 ## v0.5.2 (Released 2019-01-03)
 
 BUG FIXES
