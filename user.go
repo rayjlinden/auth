@@ -185,6 +185,8 @@ limit 1`
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
+
 	row := stmt.QueryRow(userId)
 
 	u := &User{}
@@ -215,6 +217,8 @@ func (s *sqliteUserRepository) lookupByEmail(email string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
+
 	row := stmt.QueryRow(cleanEmail(email))
 
 	var userId string
@@ -245,6 +249,8 @@ func (s *sqliteUserRepository) upsert(inc *User) error {
 		e := tx.Rollback()
 		return fmt.Errorf("problem preparing users query userId=%s, err=%v, rollback err=%v", inc.ID, err, e)
 	}
+	defer stmt.Close()
+
 	_, err = stmt.Exec(inc.ID, inc.Email, inc.cleanEmail(), inc.CreatedAt.Format(serializedTimestampFormat))
 	if err != nil {
 		e := tx.Rollback()
@@ -258,6 +264,8 @@ func (s *sqliteUserRepository) upsert(inc *User) error {
 		e := tx.Rollback()
 		return fmt.Errorf("problem preparing user_details query userId=%s, err=%v, rollback err=%v", inc.ID, err, e)
 	}
+	defer stmt.Close()
+
 	_, err = stmt.Exec(inc.ID, inc.FirstName, inc.LastName, inc.Phone, inc.CompanyURL)
 	if err != nil {
 		e := tx.Rollback()
@@ -329,6 +337,8 @@ func (a *auth) invalidateCookies(userId string) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
+
 	res, err := stmt.Exec(userId)
 	if err != nil {
 		return err
@@ -344,6 +354,7 @@ func (a *auth) writeCookie(userId string, cookie *http.Cookie) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// hash the data
 	data, err := hash(cookie.Value)
@@ -371,6 +382,7 @@ func (a *auth) checkPassword(userId string, incoming string) error {
 		a.fakeBcryptRounds()
 		return err
 	}
+	defer stmt.Close()
 
 	row := stmt.QueryRow(userId)
 	var storedPassword, storedSalt string
@@ -395,6 +407,8 @@ func (a *auth) writePassword(userId string, pass string) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
+
 	_, err = stmt.Exec(userId, string(incomingPassword), salt)
 	if err != nil {
 		return err
