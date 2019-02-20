@@ -5,25 +5,13 @@ require (
 	github.com/go-kit/kit v0.8.0
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gorilla/context v1.1.1 // indirect
-	github.com/gorilla/mux v1.6.2
+	github.com/gorilla/mux v1.7.0
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
-	github.com/klauspost/compress v1.4.1 // indirect
-	github.com/klauspost/cpuid v1.2.0 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0
-	github.com/moov-io/base v0.2.1
+	github.com/moov-io/base v0.8.0
 	github.com/prometheus/client_golang v0.9.2
-	github.com/prometheus/common v0.0.0-20181218105931-67670fe90761 // indirect
-	github.com/prometheus/procfs v0.0.0-20190215202403-f8d8b3f739bd // indirect
 	github.com/rickar/cal v1.0.0 // indirect
-	golang.org/x/crypto v0.0.0-20190215202424-74369b46fc67
-	golang.org/x/net v0.0.0-20190215215048-3a22650c66bd // indirect
-	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
-	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
-	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598 // indirect
-	google.golang.org/appengine v1.4.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/oauth2.v3 v3.9.3
-	gopkg.in/yaml.v2 v2.2.2 // indirect
+	golang.org/x/crypto v0.0.0-20190219172222-a4c6cb3142f2
+	golang.org/x/oauth2 v0.0.0-20190220154721-9b3c75971fc9
+	gopkg.in/oauth2.v3 v3.9.5
 )
