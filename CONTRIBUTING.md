@@ -12,19 +12,11 @@ Please review our [Code of Conduct](https://github.com/moov-io/ach/blob/master/C
 
 We use GitHub to manage reviews of pull requests.
 
-* If you have a trivial fix or improvement, go ahead and create a pull
-  request, addressing (with `@...`) one or more of the maintainers
-  (see [AUTHORS.md](AUTHORS.md)) in the description of the pull request.
+* If you have a trivial fix or improvement, go ahead and create a pull request, addressing (with `@...`) one or more of the maintainers (see [AUTHORS](AUTHORS)) in the description of the pull request.
 
-* If you plan to do something more involved, first propose your ideas
-  in a Github issue. This will avoid unnecessary work and surely give
-  you and us a good deal of inspiration.
+* If you plan to do something more involved, first propose your ideas in a Github issue. This will avoid unnecessary work and surely give you and us a good deal of inspiration.
 
-* Relevant coding style guidelines are the [Go Code Review
-  Comments](https://code.google.com/p/go-wiki/wiki/CodeReviewComments)
-  and the _Formatting and style_ section of Peter Bourgon's [Go: Best
-  Practices for Production
-  Environments](http://peter.bourgon.org/go-in-production/#formatting-and-style).
+* Relevant coding style guidelines are the [Go Code Review Comments](https://code.google.com/p/go-wiki/wiki/CodeReviewComments) and the _Formatting and style_ section of Peter Bourgon's [Go: Best Practices for Production Environments](http://peter.bourgon.org/go-in-production/#formatting-and-style).
 
 * When in doubt follow the [Go Proverbs](https://go-proverbs.github.io/)
 
@@ -77,4 +69,4 @@ A good quality PR will have the following characteristics:
 
 A good PR should be able to flow through a peer review system easily and quickly.
 
-Our Build pipeline utilizes [Travis-CI](https://travis-ci.org/moov-io/ach) to enforce many tools that you should add to your editor before issuing a pull request. Learn more about these tools on our [Go Report card](https://goreportcard.com/report/github.com/moov-io/ach)
+Our Build pipeline utilizes [Travis-CI](https://travis-ci.org/moov-io/auth) to enforce many tools that you should add to your editor before issuing a pull request. Learn more about these tools on our [Go Report card](https://goreportcard.com/report/github.com/moov-io/auth)
