@@ -1,3 +1,10 @@
+## v0.6.0 (Released 2019-02-26)
+
+IMPROVEMENTS
+
+- Automated releases via TravisCI
+- Update to Go 1.12
+
 ## v0.5.3 (Released 2019-01-16)
 
 BUG FIXES
