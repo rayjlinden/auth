@@ -11,7 +11,7 @@ require (
 	github.com/moov-io/base v0.8.0
 	github.com/prometheus/client_golang v0.9.2
 	github.com/rickar/cal v1.0.0 // indirect
-	golang.org/x/crypto v0.0.0-20190225125221-7f87c0fbb88b
-	golang.org/x/oauth2 v0.0.0-20190220154721-9b3c75971fc9
+	golang.org/x/crypto v0.0.0-20190227185656-215aa809caaf
+	golang.org/x/oauth2 v0.0.0-20190227185656-e64efc72b421
 	gopkg.in/oauth2.v3 v3.9.5
 )
