@@ -1,0 +1,400 @@
+openapi: 3.0.2
+info:
+  description: |+
+    Moov Auth is an HTTP service which authenticates and authorizes users for the Moov API. Auth handles HTTP cookie and OAuth2 exchange for requests and supports user creation.
+    If you find a problem (security or otherwise), please contact us at [`security@moov.io`](mailto:security@moov.io).
+  version: v1
+  title: Auth API
+  contact:
+    url: https://github.com/moov-io/auth
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8082
+    description: Local development
+
+tags:
+  - name: User
+    description: User represents an entity that can create api auth tokens used to make requests.
+  - name: OAuth2
+    description: OAuth2 endpoints are oriented towards providing automated access to Moov API.
+
+paths:
+  /ping:
+    get:
+      tags:
+        - Monitor
+      summary: Ping the auth service to check if running
+      operationId: ping
+      responses:
+        '200':
+          description: Service is running properly
+  /users/create:
+    post:
+      tags:
+        - User
+      summary: Create a new user using an email address not seen before.
+      operationId: createUser
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '200':
+          description: User object
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid user information, check error(s).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal error, check error(s) and report the issue.
+  /users/login:
+    get:
+      tags:
+        - User
+      summary: Check if a cookie is valid and authentic for a user.
+      operationId: checkUserLogin
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+      responses:
+        '200':
+          description: User object
+          headers:
+            X-User-Id:
+              description: Moov API userId
+              schema:
+                type: string
+            Set-Cookie:
+              schema:
+                type: string
+                example: moov_auth=c9c688d1; Path=/; Secure
+        '403':
+          description: Cookie data is invalid or expired. Login required.
+    post:
+      tags:
+        - User
+      summary: Attempt to login with an email and password
+      operationId: userLogin
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/idempotencyKey'
+      requestBody:
+        description: Authenticating with an email and password
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: Successful login
+          headers:
+            Set-Cookie:
+              description: Cookie data used to authenticate user.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body, check error(s).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Invalid email and password combination. Retry with correct information.
+    delete:
+      tags:
+        - User
+      summary: Invalidat a user's cookie(s).
+      operationId: userLogout
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+      responses:
+        '200':
+          description: User cookies are invalidated.
+  /users/{user_id}:
+    patch:
+      tags:
+        - User
+      summary: Update a User's profile information
+      operationId: updateUserProfile
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/idempotencyKey'
+        - $ref: '#/components/parameters/requestId'
+        - name: user_id
+          in: path
+          description: Moov API User ID
+          required: true
+          schema:
+            type: string
+            example: 3f2d23ee214
+      requestBody:
+        description: 'User profile information'
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        '200':
+          description: User profile updated
+        '400':
+          description: Invalid request body, check error(s).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /oauth2/authorize:
+    get:
+      tags:
+        - OAuth2
+      summary: Verify OAuth2 Bearer token
+      operationId: checkOAuthClientCredentials
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - name: Authorization
+          in: header
+          description: <ignored>
+          schema:
+            type: string
+            example: Bearer eB2d415A
+          required: true
+      responses:
+        '200':
+          description: Successfully authorized via OAuth2.
+        '400':
+          description: Invalid OAuth2 access_token, check error(s)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /oauth2/client:
+    post:
+      tags:
+        - OAuth2
+      summary: Create OAuth2 client credentials
+      operationId: createOAuth2Client
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/idempotencyKey'
+      responses:
+        '200':
+          description: Created OAuth2 client credentials
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/OAuth2Client'
+        '500':
+          description: Internal error occurred, check error(s).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /oauth2/token:
+    post:
+      tags:
+        - OAuth2
+      summary: Generate OAuth2 access token
+      operationId: createOAuth2Token
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/idempotencyKey'
+        - name: grant_type
+          in: query
+          description: OAuth2 grant type (must be 'client_credentials')
+          schema:
+            type: string
+            enum:
+              - client_credentials
+            default: client_credentials
+        - name: client_id
+          in: query
+          description: OAuth2 client ID
+          schema:
+            type: string
+        - name: client_secret
+          in: query
+          description: OAuth2 client secret
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OAuth2 Bearer access token
+          content:
+            application/json:
+              schema:
+                properties:
+                  access_token:
+                    description: OAuth2 Bearer access token
+                    example: FFBDB35EDC67
+                    type: string
+                  expires_in:
+                    description: Hours until access_token expires
+                    type: integer
+                    example: 7200
+                  token_type:
+                    type: string
+                    example: Bearer
+        '400':
+          description: Missing parameters, check error(s)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    OAuth2Client:
+      properties:
+        client_id:
+          description: OAuth2 client ID
+          type: string
+          example: 9f2d213ee2a
+        client_secret:
+          description: OAuth2 client secret
+          type: string
+          example: 26e4fe61
+        domain:
+          description: HTTP domain for OAuth credentials
+          type: string
+          example: api.moov.io
+    Login:
+      properties:
+        email:
+          description: Email address associated to the User
+          type: string
+          example: "user@example.com"
+        password:
+          description: Password associated to User
+          type: string
+          example: long_passphrase_unique_per_site
+    User:
+      properties:
+        id:
+          description: Moov API user ID
+          type: string
+          example: c05ad98a
+        email:
+          description: Email address associated to the user
+          type: string
+          example: user@example.com
+        firstName:
+          type: string
+          example: Taylor
+        lastName:
+          type: string
+          example: Swift
+        phone:
+          type: string
+          description: Phone number associated to user
+          example: 555.555.5555
+        companyUrl:
+          description: Company URL associated to user
+          type: string
+          format: uri
+          example: https://moov.io
+        createdAt:
+          description: Timestamp of when user was created
+          type: string
+          format: date-time
+          example: 2006-01-02T15:04:05Z07:00
+    UserProfile:
+      properties:
+        firstName:
+          type: string
+          description: Legal first name
+          example: Jane
+        lastName:
+          type: string
+          description: Legal last name
+          example: Doe
+        phone:
+          type: string
+          description: Phone number associated to user. Dots, hyphens and spaces are trimmed. +1 is the assumed country code.
+          example: 555.555.5555
+        companyUrl:
+          description: Company URL associated to user
+          type: string
+          format: uri
+    CreateUser:
+      properties:
+        email:
+          description: Email address associated to the User
+          type: string
+        password:
+          description: Password associated to User
+          type: string
+        firstName:
+          type: string
+          description: Legal first name
+        lastName:
+          type: string
+          description: Legal last name
+        phone:
+          type: string
+          description: Phone number associated to user. Dots, hyphens and spaces are trimmed. +1 is the assumed country code.
+          example: 555.555.5555
+        companyUrl:
+          description: Company URL associated to user
+          type: string
+          format: uri
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - phone
+    Error:
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: An error message describing the problem intended for humans.
+          example: Validation error(s) present.
+  parameters:
+    idempotencyKey:
+      in: header
+      name: X-Idempotency-Key
+      description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+      example: a4f88150
+      required: false
+      schema:
+        type: string
+    requestId:
+      in: header
+      name: X-Request-Id
+      description: Optional Request ID allows application developer to trace requests through the systems logs
+      example: rs4f9915
+      schema:
+        type: string
