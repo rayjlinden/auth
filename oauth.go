@@ -96,6 +96,7 @@ func setupOAuthServer(logger log.Logger, clientStore *oauthdb.ClientStore, token
 // addOAuthRoutes includes our oauth2 routes on the provided mux.Router
 func addOAuthRoutes(r *mux.Router, o *oauth, logger log.Logger, auth authable) {
 	r.Methods("GET").Path("/oauth2/authorize").HandlerFunc(o.authorizeHandler)
+	r.Methods("GET").Path("/oauth2/clients").HandlerFunc(o.getClientsForUserId(auth))
 	r.Methods("POST").Path("/oauth2/client").HandlerFunc(o.createClientHandler(auth))
 
 	// Check token routes
@@ -248,7 +249,6 @@ func (o *oauth) createClientHandler(auth authable) http.HandlerFunc {
 
 		// render back new clients
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
 		var responseClients []*client
 		for i := range clients {
 			responseClients = append(responseClients, &client{
@@ -275,4 +275,37 @@ func (o *oauth) shutdown() error {
 		return nil
 	}
 	return o.clientStore.Close()
+}
+
+func (o *oauth) getClientsForUserId(auth authable) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w = wrapResponseWriter(w, r, "oauth.getClientsForUserId")
+
+		userId, err := extractUserId(auth, r)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		clients, err := o.clientStore.GetByUserID(userId)
+		if err != nil {
+			internalError(w, err)
+			return
+		}
+
+		// render OAuth2 clients for user
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		var responseClients []*client
+		for i := range clients {
+			responseClients = append(responseClients, &client{
+				ClientID:     clients[i].GetID(),
+				ClientSecret: clients[i].GetSecret(),
+				Domain:       clients[i].GetDomain(),
+			})
+		}
+		if err := json.NewEncoder(w).Encode(responseClients); err != nil {
+			internalError(w, err)
+			return
+		}
+	}
 }

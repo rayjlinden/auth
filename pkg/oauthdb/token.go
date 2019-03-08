@@ -50,14 +50,10 @@ func NewTokenStoreDB(connString string) (*TokenStore, error) {
 		return nil, fmt.Errorf("problem with Ping against *sql.DB %s: %v", driver, err)
 	}
 
-	tokenStore := &TokenStore{
-		db: db,
-	}
-
+	tokenStore := &TokenStore{db: db}
 	if err := tokenStore.migrate(); err != nil {
 		return nil, err
 	}
-
 	return tokenStore, nil
 }
 

@@ -246,3 +246,50 @@ func TestOAuth__tokenHandler(t *testing.T) {
 		t.Errorf("got %d HTTP status code: %s", w.Code, w.Body.String())
 	}
 }
+
+func TestOAuth__getClientsForUserId(t *testing.T) {
+	o, err := createTestOAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.cleanup()
+
+	auth, err := createTestAuthable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auth.cleanup()
+
+	userId := generateID()
+	cookie, err := createCookie(userId, auth)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c, _ := createOAuthClient(t, o, userId)
+	if c == nil {
+		t.Fatal("nil client")
+	}
+
+	// capture response
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/oauth2/clients", nil)
+	req.Header.Set("Cookie", fmt.Sprintf("moov_auth=%s", cookie.Value))
+	o.svc.getClientsForUserId(auth)(w, req)
+	w.Flush()
+
+	if w.Code != http.StatusOK {
+		t.Errorf("bogus HTTP status code: %d", w.Code)
+	}
+
+	var clients []*client
+	if err := json.NewDecoder(w.Body).Decode(&clients); err != nil {
+		t.Error(err)
+	}
+	if len(clients) != 1 {
+		t.Errorf("clients: %#v", clients)
+	}
+	if c.ID != clients[0].ClientID {
+		t.Errorf("c.ID=%s clients[0].ClientID=%s", c.ID, clients[0].ClientID)
+	}
+}

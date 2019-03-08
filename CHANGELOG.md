@@ -1,3 +1,9 @@
+## v0.7.0 (Unreleased)
+
+ADDITIONS
+
+- oauth: Added `GET /oauth2/clients` to retrieve all OAuth2 client credentials for the authenticated user
+
 ## v0.6.0 (Released 2019-02-26)
 
 IMPROVEMENTS
