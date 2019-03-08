@@ -192,6 +192,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /oauth2/clients:
+    get:
+      tags:
+        - OAuth2
+      summary: List OAuth2 clients for the authenticated user
+      operationId: getClientsForUserId
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/idempotencyKey'
+      responses:
+        '200':
+          description: OAuth2 client credentials
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/OAuth2Clients'
+        '500':
+          description: Internal error occurred, check error(s).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /oauth2/client:
     post:
       tags:
@@ -288,6 +314,10 @@ components:
           description: HTTP domain for OAuth credentials
           type: string
           example: api.moov.io
+    OAuth2Clients:
+      type: array
+      items:
+        $ref: '#/components/schemas/OAuth2Client'
     Login:
       properties:
         email:
