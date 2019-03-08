@@ -156,7 +156,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserProfile'
+              $ref: './openapi.yaml#/components/schemas/UserProfile'
       responses:
         '200':
           description: User profile updated
