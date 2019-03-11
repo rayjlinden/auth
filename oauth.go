@@ -303,6 +303,7 @@ func (o *oauth) getClientsForUserId(auth authable) http.HandlerFunc {
 				Domain:       clients[i].GetDomain(),
 			})
 		}
+		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(responseClients); err != nil {
 			internalError(w, err)
 			return
