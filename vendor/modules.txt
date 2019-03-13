@@ -42,13 +42,13 @@ github.com/prometheus/procfs/xfs
 github.com/prometheus/procfs/internal/util
 # github.com/rickar/cal v1.0.0
 github.com/rickar/cal
-# golang.org/x/crypto v0.0.0-20190219172222-a4c6cb3142f2
+# golang.org/x/crypto v0.0.0-20190228175828-8dd112bcdc25
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
 # golang.org/x/net v0.0.0-20190108225652-1e06a53dbb7e
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/context
-# golang.org/x/oauth2 v0.0.0-20190220154721-9b3c75971fc9
+# golang.org/x/oauth2 v0.0.0-20190227185656-e64efc72b421
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # google.golang.org/appengine v1.4.0
