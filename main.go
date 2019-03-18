@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -30,7 +31,8 @@ var (
 	httpAddr  = flag.String("http.addr", bind.HTTP("auth"), "HTTP listen address")
 	adminAddr = flag.String("admin.addr", bind.Admin("auth"), "Admin HTTP listen address")
 
-	logger log.Logger
+	logger        log.Logger
+	flagLogFormat = flag.String("log.format", "", "Format for log lines (Options: json, plain")
 
 	// Configuration
 	tlsCertificate, tlsPrivateKey = os.Getenv("TLS_CERT"), os.Getenv("TLS_KEY")
@@ -74,7 +76,11 @@ func main() {
 	flag.Parse()
 
 	// Setup logging, default to stdout
-	logger = log.NewLogfmtLogger(os.Stderr)
+	if strings.ToLower(*flagLogFormat) == "json" {
+		logger = log.NewJSONLogger(os.Stderr)
+	} else {
+		logger = log.NewLogfmtLogger(os.Stderr)
+	}
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	logger = log.With(logger, "caller", log.DefaultCaller)
 	logger.Log("startup", fmt.Sprintf("Starting auth server version %s", Version))
