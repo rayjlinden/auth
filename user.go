@@ -249,13 +249,13 @@ func (s *sqliteUserRepository) upsert(inc *User) error {
 		e := tx.Rollback()
 		return fmt.Errorf("problem preparing users query userId=%s, err=%v, rollback err=%v", inc.ID, err, e)
 	}
-	defer stmt.Close()
-
 	_, err = stmt.Exec(inc.ID, inc.Email, inc.cleanEmail(), inc.CreatedAt.Format(serializedTimestampFormat))
 	if err != nil {
+		stmt.Close()
 		e := tx.Rollback()
 		return fmt.Errorf("problem upserting users userId=%s, err=%v, rollback err=%v", inc.ID, err, e)
 	}
+	stmt.Close()
 
 	// insert/update into 'user_details'
 	query = `replace into user_details (user_id, first_name, last_name, phone, company_url) values (?, ?, ?, ?, ?)`
@@ -264,13 +264,13 @@ func (s *sqliteUserRepository) upsert(inc *User) error {
 		e := tx.Rollback()
 		return fmt.Errorf("problem preparing user_details query userId=%s, err=%v, rollback err=%v", inc.ID, err, e)
 	}
-	defer stmt.Close()
-
 	_, err = stmt.Exec(inc.ID, inc.FirstName, inc.LastName, inc.Phone, inc.CompanyURL)
 	if err != nil {
+		stmt.Close()
 		e := tx.Rollback()
 		return fmt.Errorf("problem upserting user_details userId=%s, err=%v, rollback err=%v", inc.ID, err, e)
 	}
+	stmt.Close()
 
 	return tx.Commit()
 }
