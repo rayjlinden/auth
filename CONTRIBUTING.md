@@ -20,6 +20,8 @@ We use GitHub to manage reviews of pull requests.
 
 * When in doubt follow the [Go Proverbs](https://go-proverbs.github.io/)
 
+* Checkout this [Overview of Go Tooling](https://www.alexedwards.net/blog/an-overview-of-go-tooling) by Alex Edwards
+
 ## Getting the code
 
 Before starting please make sure you have Go setup and can build our projects from source.
