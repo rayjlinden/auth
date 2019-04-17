@@ -358,18 +358,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  access_token:
-                    description: OAuth2 Bearer access token
-                    example: FFBDB35EDC67
-                    type: string
-                  expires_in:
-                    description: Hours until access_token expires
-                    type: integer
-                    example: 7200
-                  token_type:
-                    type: string
-                    example: Bearer
+                $ref: '#/components/schemas/OAuthToken'
         '400':
           description: Missing parameters, check error(s)
           content:
@@ -397,6 +386,19 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/OAuth2Client'
+    OAuthToken:
+      properties:
+        access_token:
+          description: OAuth2 Bearer access token
+          example: FFBDB35EDC67
+          type: string
+        expires_in:
+          description: Hours until access_token expires
+          type: integer
+          example: 7200
+        token_type:
+          type: string
+          example: Bearer
     Login:
       properties:
         email:
