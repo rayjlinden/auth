@@ -38,8 +38,19 @@ paths:
       summary: Create a new user using an email address not seen before.
       operationId: createUser
       parameters:
-        - $ref: '#/components/parameters/requestId'
-        - $ref: '#/components/parameters/idempotencyKey'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+          example: a4f88150
+          required: false
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -70,7 +81,12 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - $ref: '#/components/parameters/requestId'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
       responses:
         '200':
           description: User object
@@ -91,8 +107,19 @@ paths:
       summary: Attempt to login with an email and password
       operationId: userLogin
       parameters:
-        - $ref: '#/components/parameters/requestId'
-        - $ref: '#/components/parameters/idempotencyKey'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+          example: a4f88150
+          required: false
+          schema:
+            type: string
       requestBody:
         description: Authenticating with an email and password
         required: true
@@ -128,7 +155,12 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - $ref: '#/components/parameters/requestId'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
       responses:
         '200':
           description: User cookies are invalidated.
@@ -141,8 +173,19 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - $ref: '#/components/parameters/idempotencyKey'
-        - $ref: '#/components/parameters/requestId'
+        - name: X-Idempotency-Key
+          in: header
+          description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+          example: a4f88150
+          required: false
+          schema:
+            type: string
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
         - name: user_id
           in: path
           description: Moov API User ID
@@ -175,7 +218,12 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/requestId'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
         - name: Authorization
           in: header
           description: <ignored>
@@ -201,8 +249,19 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - $ref: '#/components/parameters/requestId'
-        - $ref: '#/components/parameters/idempotencyKey'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+          example: a4f88150
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: OAuth2 client credentials
@@ -227,8 +286,19 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - $ref: '#/components/parameters/requestId'
-        - $ref: '#/components/parameters/idempotencyKey'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+          example: a4f88150
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Created OAuth2 client credentials
@@ -253,8 +323,19 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/requestId'
-        - $ref: '#/components/parameters/idempotencyKey'
+        - name: X-Request-Id
+          in: header
+          description: Optional Request ID allows application developer to trace requests through the systems logs
+          example: rs4f9915
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
+          example: a4f88150
+          required: false
+          schema:
+            type: string
         - name: grant_type
           in: query
           description: OAuth2 grant type (must be 'client_credentials')
@@ -412,19 +493,3 @@ components:
           type: string
           description: An error message describing the problem intended for humans.
           example: Validation error(s) present.
-  parameters:
-    idempotencyKey:
-      in: header
-      name: X-Idempotency-Key
-      description: Idempotent key in the header which expires after 24 hours. These strings should contain enough entropy for to not collide with each other in your requests.
-      example: a4f88150
-      required: false
-      schema:
-        type: string
-    requestId:
-      in: header
-      name: X-Request-Id
-      description: Optional Request ID allows application developer to trace requests through the systems logs
-      example: rs4f9915
-      schema:
-        type: string
