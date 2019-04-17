@@ -268,9 +268,7 @@ paths:
           content:
             application/json:
               schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/OAuth2Clients'
+                $ref: '#/components/schemas/OAuth2Clients'
         '500':
           description: Internal error occurred, check error(s).
           content:
