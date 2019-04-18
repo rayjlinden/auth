@@ -129,6 +129,7 @@ func (cs *ClientStore) GetByUserID(userId string) ([]oauth2.ClientInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("client store: failed to query GetByID: %v", err)
 	}
+	defer rows.Close()
 
 	var clients []oauth2.ClientInfo
 	for rows.Next() {
