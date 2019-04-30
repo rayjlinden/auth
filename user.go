@@ -329,7 +329,7 @@ func (a *auth) findUserId(data string) (string, error) {
 			return userId, nil
 		}
 	}
-	return "", nil
+	return "", rows.Err()
 }
 
 func (a *auth) invalidateCookies(userId string) error {

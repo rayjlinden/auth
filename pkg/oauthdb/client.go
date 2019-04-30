@@ -142,8 +142,7 @@ func (cs *ClientStore) GetByUserID(userId string) ([]oauth2.ClientInfo, error) {
 		}
 		clients = append(clients, &client)
 	}
-
-	return clients, nil
+	return clients, rows.Err()
 }
 
 // DeleteByID removes the oauth2.ClientInfo for the provided id.
