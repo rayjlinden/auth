@@ -15,7 +15,7 @@ The auth project supports various auth methods:
 - REST authentication and user sign-up
 - OAuth2 exchange (linked to an authenticated user)
 
-Docs: [docs.moov.io](https://docs.moov.io/en/latest/) | [api docs](https://editor.swagger.io/?url=https://raw.githubusercontent.com/moov-io/auth/master/openapi.yaml)
+Docs: [docs.moov.io](https://docs.moov.io/en/latest/) | [api docs](https://api.moov.io/apps/auth/)
 
 ## Project Status
 
