@@ -1,4 +1,4 @@
-## v0.7.0 (Unreleased)
+## v0.7.0 (Released 2019-06-19)
 
 ADDITIONS
 
