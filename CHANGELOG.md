@@ -3,6 +3,14 @@
 ADDITIONS
 
 - oauth: Added `GET /oauth2/clients` to retrieve all OAuth2 client credentials for the authenticated user
+- build: support -log.format=json
+
+BUG FIXES
+
+- oauth: write header (flushes headers, etc)
+- user: close sql.Stmt and avoid shadowing
+- api: inline parameters to fix codegen crash
+- pkg/oauthdb: add missing database/sql Rows.Close()
 
 ## v0.6.0 (Released 2019-02-26)
 
